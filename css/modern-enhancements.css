@@ -1,0 +1,315 @@
+/* 现代化增强样式 - 图标与插画系统 */
+
+/* 统一的线性图标系统 */
+.icon-linear {
+    font-weight: 300 !important;
+    stroke-width: 2px;
+    font-size: inherit;
+    line-height: 1;
+}
+
+/* 自定义音乐图标 */
+.music-icon-note::before {
+    content: "♪";
+    font-family: inherit;
+    font-weight: var(--font-weight-light);
+}
+
+.music-icon-wave::before {
+    content: "〜";
+    font-family: inherit;
+    font-weight: var(--font-weight-light);
+}
+
+/* 空状态插画容器 */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xxl);
+    text-align: center;
+    min-height: 300px;
+}
+
+.empty-state-illustration {
+    width: 120px;
+    height: 120px;
+    margin-bottom: var(--spacing-lg);
+    opacity: 0.6;
+    position: relative;
+}
+
+/* 简约线条风格插画 - 音乐播放器 */
+.illustration-music-player {
+    border: 2px solid var(--text-color-secondary);
+    border-radius: var(--radius-lg);
+    position: relative;
+    background: transparent;
+}
+
+.illustration-music-player::before {
+    content: '';
+    position: absolute;
+    top: 20%;
+    left: 20%;
+    width: 60%;
+    height: 2px;
+    background: var(--text-color-secondary);
+    border-radius: 1px;
+}
+
+.illustration-music-player::after {
+    content: '';
+    position: absolute;
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--text-color-secondary);
+    border-radius: 50%;
+    background: transparent;
+}
+
+/* 简约线条风格插画 - 搜索 */
+.illustration-search {
+    border: 2px solid var(--text-color-secondary);
+    border-radius: 50%;
+    position: relative;
+    background: transparent;
+}
+
+.illustration-search::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    width: 30px;
+    height: 2px;
+    background: var(--text-color-secondary);
+    border-radius: 1px;
+    transform: rotate(45deg);
+}
+
+/* 简约线条风格插画 - 收藏夹 */
+.illustration-favorites {
+    position: relative;
+    background: transparent;
+}
+
+.illustration-favorites::before {
+    content: '♡';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    color: var(--text-color-secondary);
+    font-weight: var(--font-weight-light);
+}
+
+/* 空状态文本 */
+.empty-state-title {
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--text-color-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.empty-state-description {
+    font-size: 1rem;
+    font-weight: var(--font-weight-regular);
+    color: var(--text-color-secondary);
+    line-height: 1.5;
+    max-width: 400px;
+}
+
+/* 渐变遮罩增强 */
+.gradient-overlay {
+    position: relative;
+    overflow: hidden;
+}
+
+.gradient-overlay::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        135deg,
+        rgba(0, 0, 0, 0.1) 0%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.05) 100%
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* 图片渐变遮罩 */
+.image-gradient-mask {
+    position: relative;
+    overflow: hidden;
+}
+
+.image-gradient-mask::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.7) 0%,
+        rgba(0, 0, 0, 0.3) 50%,
+        transparent 100%
+    );
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* 文字在遮罩上的可读性增强 */
+.image-gradient-mask .overlay-text {
+    position: absolute;
+    bottom: var(--spacing-md);
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+    color: white;
+    z-index: 3;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* 微妙的边框增强 */
+.subtle-border {
+    border: 1px solid var(--border-color-subtle);
+    position: relative;
+}
+
+.subtle-border::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 100%
+    );
+}
+
+/* 呼吸感布局 */
+.breathing-layout {
+    padding: var(--spacing-lg);
+    margin: var(--spacing-md) 0;
+}
+
+.breathing-layout + .breathing-layout {
+    margin-top: var(--spacing-xl);
+}
+
+/* 层次感卡片堆叠 */
+.layered-cards {
+    position: relative;
+}
+
+.layered-cards::before,
+.layered-cards::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: -4px;
+    bottom: -4px;
+    background: var(--component-bg);
+    border-radius: var(--radius-md);
+    opacity: 0.3;
+    z-index: -1;
+}
+
+.layered-cards::after {
+    top: 8px;
+    left: 8px;
+    right: -8px;
+    bottom: -8px;
+    opacity: 0.1;
+    z-index: -2;
+}
+
+/* 像素完美对齐辅助类 */
+.pixel-perfect {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* 统一的动画缓动 */
+.smooth-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bounce-transition {
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* 现代化滚动条 */
+.modern-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.modern-scrollbar::-webkit-scrollbar-track {
+    background: var(--border-color-subtle);
+    border-radius: 3px;
+}
+
+.modern-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+        135deg,
+        rgba(var(--accent-color-rgb), 0.6),
+        rgba(var(--accent-color-rgb), 0.8)
+    );
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.modern-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+        135deg,
+        rgba(var(--accent-color-rgb), 0.8),
+        rgba(var(--accent-color-rgb), 1)
+    );
+}
+
+/* 响应式字体大小 */
+@media (max-width: 768px) {
+    .empty-state-title {
+        font-size: 1.25rem;
+    }
+    
+    .empty-state-description {
+        font-size: 0.9rem;
+    }
+    
+    .empty-state-illustration {
+        width: 80px;
+        height: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+    .breathing-layout {
+        padding: var(--spacing-md);
+        margin: var(--spacing-sm) 0;
+    }
+    
+    .empty-state {
+        padding: var(--spacing-lg);
+        min-height: 200px;
+    }
+}

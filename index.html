@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能音乐播放器</title>
+    
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#16213e">
+    <meta name="background-color" content="#1a1a2e">
+    <meta name="display" content="standalone">
+    <meta name="orientation" content="portrait-primary">
+    
+    <!-- iOS Safari PWA 支持 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="音乐播放器">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9InVybCgjZ3JhZGllbnQwX2xpbmVhcl8xXzEpIi8+CjxwYXRoIGQ9Ik05NiAxNDRDMTEyLjU2OSAxNDQgMTI2IDEzMC41NjkgMTI2IDExNEMxMjYgOTcuNDMxNSAxMTIuNTY5IDg0IDk2IDg0Qzc5LjQzMTUgODQgNjYgOTcuNDMxNSA2NiAxMTRDNjYgMTMwLjU2OSA3OS40MzE1IDE0NCA5NiAxNDRaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTI2IDExNFY0OEwxNjYgNDBWMTA2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJncmFkaWVudDBfbGluZWFyXzFfMSIgeDE9IjAiIHkxPSIwIiB4Mj0iMTkyIiB5Mj0iMTkyIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxzdG9wIHN0b3AtY29sb3I9IiM2NjdlZWEiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNzY0YmEyIi8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPC9zdmc+">
+    
+    <!-- Microsoft Edge/Windows PWA 支持 -->
+    <meta name="msapplication-TileColor" content="#16213e">
+    <meta name="msapplication-config" content="browserconfig.xml">
+    
+    <!-- SEO 和描述 -->
+    <meta name="description" content="智能音乐播放器，支持多源搜索、元数据增强、高质量封面和歌词同步。支持网易云、JOOX、酷我、腾讯音乐等多个平台。">
+    <meta name="keywords" content="音乐播放器,多源搜索,元数据增强,歌词同步,PWA,离线播放">
+    <meta name="author" content="Music Player Team">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="智能音乐播放器">
+    <meta property="og:description" content="支持多源搜索和元数据增强的智能音乐播放器">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="/">
+    <meta property="og:image" content="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iNjQiIGZpbGw9InVybCgjZ3JhZGllbnQwX2xpbmVhcl8xXzEpIi8+CjxwYXRoIGQ9Ik0yNTYgMzg0QzMwMS4wMTkgMzg0IDMzNiAzNDkuMDE5IDMzNiAzMDRDMzM2IDI1OC45ODEgMzAxLjAxOSAyMjQgMjU2IDIyNEMyMTAuOTgxIDIyNCAxNzYgMjU4Ljk4MSAxNzYgMzA0QzE3NiAzNDkuMDE5IDIxMC45ODEgMzg0IDI1NiAzODRaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMzM2IDMwNFYxMjhMNDQ4IDEwNlYyODIiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMjAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJncmFkaWVudDBfbGluZWFyXzFfMSIgeDE9IjAiIHkxPSIwIiB4Mj0iNTEyIiB5Mj0iNTEyIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxzdG9wIHN0b3AtY29sb3I9IiM2NjdlZWEiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNzY0YmEyIi8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPHN2Zz4=">
+    
+    <!-- 字体和样式 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/settings-modern.css">
+    <link rel="stylesheet" href="css/modern-enhancements.css">
+</head>
+
+<body class="dark-mode">
+
+    <audio id="audioPlayer" crossorigin="anonymous"></audio>
+
+    <div class="app-container">
+        <div class="background-overlay" id="background-overlay"></div>
+        
+        <!-- 动态背景效果层 -->
+        <div class="dynamic-background" id="dynamic-background">
+            <div class="gradient-animation" id="gradient-animation"></div>
+            <div class="breathing-light" id="breathing-light"></div>
+            <div class="floating-particles" id="floating-particles"></div>
+            <div class="beat-pulse" id="beat-pulse"></div>
+        </div>
+
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1 id="sidebar-title"><i class="fas fa-headphones-alt"></i> <span class="sidebar-text">Music</span></h1>
+                <button class="sidebar-toggle" id="sidebar-toggle" title="收起/展开侧栏">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#" class="nav-link active" data-view="discover-view" title="发现音乐"><i
+                                class="fas fa-compass"></i><span class="sidebar-text">发现音乐</span></a></li>
+                    <li><a href="#" class="nav-link" data-view="local-view" title="我的本地"><i class="fas fa-hdd"></i><span class="sidebar-text">我的本地</span></a></li>
+                    <li><a href="#" class="nav-link" data-view="favourites-view" title="我的收藏"><i class="fas fa-heart"></i><span class="sidebar-text">我的收藏</span></a>
+                    </li>
+                    <li><a href="#" class="nav-link" data-view="history-view" title="播放历史"><i class="fas fa-history"></i><span class="sidebar-text">播放历史</span></a>
+                    </li>
+                    <li><a href="#" class="nav-link" data-view="stats-view" title="听歌统计"><i class="fas fa-chart-pie"></i><span class="sidebar-text">听歌统计</span></a>
+                    </li>
+                    <li><a href="#" class="nav-link" data-view="playlists-view" title="我的歌单"><i class="fas fa-music"></i><span class="sidebar-text">我的歌单</span></a></li>
+                    <li><a href="#" class="nav-link" data-view="settings-view" title="基本设置"><i class="fas fa-cog"></i><span class="sidebar-text">基本设置</span></a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-tools">
+                <div class="theme-selector" id="theme-selector">
+                    <div class="theme-dot" data-theme="dark-mode" style="background: #191A1C;"></div>
+                    <div class="theme-dot" data-theme="light-mode" style="background: #F4F6F8;"></div>
+                    <div class="theme-dot" data-theme="theme-sunset"
+                        style="background: linear-gradient(45deg, #F3904F, #3B4371);"></div>
+                    <div class="theme-dot" data-theme="theme-forest"
+                        style="background: linear-gradient(45deg, #5A3F37, #2C7744);"></div>
+                    <div class="theme-dot" data-theme="theme-millennial-pink" style="background: #f7cac9;"></div>
+                    <div class="theme-dot" data-theme="theme-gradient-mint" 
+                        style="background: linear-gradient(135deg, #A9F1DF, #FFBBBB);"></div>
+                </div>
+                <div class="theme-switcher" id="themeToggle"><i class="fas fa-sun"></i> <span>切换模式</span></div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div id="discover-view" class="view active">
+                <div class="discover-header">
+                    <div class="header-main-content">
+                        <h2 id="discover-greeting">晚上好</h2>
+                        <div class="search-area">
+                            <i class="fas fa-search"></i>
+                            <input type="search" id="searchInput" placeholder="搜索歌曲、歌手...">
+                            <!-- 搜索建议下拉框 -->
+                            <div class="search-suggestions" id="search-suggestions"></div>
+                        </div>
+                    </div>
+                    <button id="backToGridBtn" class="action-button" style="display: none;"><i
+                            class="fas fa-arrow-left"></i> 返回榜单</button>
+                </div>
+
+                <div id="discover-portal">
+                    <div class="discover-grid" id="discover-grid"></div>
+                    <div class="featured-playlist" id="featured-playlist">
+                        <h3>近期最爱</h3>
+                        <div class="featured-list" id="featured-list"></div>
+                    </div>
+                </div>
+
+                <div id="song-list-container" class="song-list" style="display: none;"></div>
+                <div id="pagination-discover" class="pagination-controls"></div>
+            </div>
+            <div id="local-view" class="view">
+                <h2><i class="fas fa-hdd"></i> 我的本地音乐</h2>
+                <button id="addLocalFilesBtn" class="action-button"><i class="fas fa-folder-plus"></i> 添加本地音乐</button>
+                <input type="file" id="localFileInput" multiple accept="audio/*" style="display: none;">
+                <div id="local-list-container" class="song-list"></div>
+                <div id="pagination-local" class="pagination-controls"></div>
+            </div>
+            <div id="favourites-view" class="view">
+                <h2><i class="fas fa-heart"></i> 我的收藏</h2>
+                <div id="favourites-list-container" class="song-list"></div>
+                <div id="pagination-favourites" class="pagination-controls"></div>
+            </div>
+            <div id="history-view" class="view">
+                <h2><i class="fas fa-history"></i> 播放历史</h2>
+                <div id="history-list-container" class="song-list"></div>
+                <div id="pagination-history" class="pagination-controls"></div>
+            </div>
+            <div id="stats-view" class="view">
+                <h2><i class="fas fa-chart-pie"></i> 听歌统计</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>总播放量</h3>
+                        <p id="stats-total-plays">0</p>
+                        <small class="stat-subtitle">首歌曲</small>
+                    </div>
+                    <div class="stat-card">
+                        <h3>不同歌曲</h3>
+                        <p id="stats-unique-tracks">0</p>
+                        <small class="stat-subtitle">种类型</small>
+                    </div>
+                    <div class="stat-card">
+                        <h3>总时长</h3>
+                        <p id="stats-total-duration">0h 0m</p>
+                        <small class="stat-subtitle">累计播放</small>
+                    </div>
+                    <div class="stat-card">
+                        <h3>收藏歌曲</h3>
+                        <p id="stats-favourite-count">0</p>
+                        <small class="stat-subtitle">我的最爱</small>
+                    </div>
+                    <div class="stat-card">
+                        <h3>最活跃时段</h3>
+                        <p id="stats-active-period">-</p>
+                        <small class="stat-subtitle">听歌时间</small>
+                    </div>
+                    <div class="stat-card">
+                        <h3>本周播放</h3>
+                        <p id="stats-week-plays">0</p>
+                        <small class="stat-subtitle">首歌曲</small>
+                    </div>
+                </div>
+                
+                <!-- 时段分析 -->
+                <div class="time-analysis-section">
+                    <h3>听歌时段分析</h3>
+                    <div class="time-chart-container">
+                        <div class="time-bar-chart" id="time-chart"></div>
+                    </div>
+                </div>
+                
+                <div class="list-section">
+                    <h2>播放最多的歌曲</h2>
+                    <div id="stats-top-tracks" class="song-list"></div>
+                </div>
+                <div class="list-section" style="margin-top: 30px;">
+                    <h2>最常听的歌手</h2>
+                    <div id="stats-top-artists" class="song-list"></div>
+                </div>
+            </div>
+            
+            <!-- 我的歌单管理页面 -->
+            <div id="playlists-view" class="view">
+                <div class="playlists-header">
+                    <h2><i class="fas fa-music"></i> 我的歌单</h2>
+                    <button id="create-playlist-btn" class="action-button"><i class="fas fa-plus"></i> 创建歌单</button>
+                </div>
+                <div id="playlists-grid" class="playlists-grid"></div>
+            </div>
+            
+            <!-- ===== 新增：用于显示歌单内容的视图 ===== -->
+            <div id="playlist-view" class="view">
+                <h2 id="playlist-view-title"><i class="fas fa-music"></i> 歌单详情</h2>
+                <div id="playlist-view-list-container" class="song-list"></div>
+                <!-- 歌单视图也可以有自己的分页，如果需要的话 -->
+                <div id="pagination-playlist" class="pagination-controls"></div>
+            </div>
+
+            <div id="settings-view" class="view">
+                <!-- 个人标识区域 -->
+                <div class="developer-header">
+                    <div class="developer-avatar">
+                        <div class="avatar-circle">
+                            <i class="fas fa-music"></i>
+                        </div>
+                        <div class="avatar-glow"></div>
+                    </div>
+                    <div class="developer-info">
+                        <h2 class="developer-name">YanLing</h2>
+                        <p class="developer-title">音乐播放器开发者</p>
+                        <div class="developer-tags">
+                            <span class="dev-tag">🎵 多源搜索</span>
+                            <span class="dev-tag">🎨 元数据增强</span>
+                            <span class="dev-tag">📱 PWA应用</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-container">
+                    <!-- 播放设置模块 -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <div class="card-icon">
+                                <i class="fas fa-sliders-h"></i>
+                            </div>
+                            <h3>播放设置</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label>音质选择</label>
+                                    <span class="setting-desc">选择音频播放质量</span>
+                                </div>
+                                <select id="audio-quality" class="modern-select">
+                                    <option value="high">高音质</option>
+                                    <option value="medium">标准音质</option>
+                                    <option value="low">流畅音质</option>
+                                </select>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label>自动播放</label>
+                                    <span class="setting-desc">歌曲结束后自动播放下一首</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="auto-play" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label>淡入淡出</label>
+                                    <span class="setting-desc">歌曲切换时的平滑过渡效果</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="crossfade">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 服务器配置模块 -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <div class="card-icon">
+                                <i class="fas fa-server"></i>
+                            </div>
+                            <h3>服务器配置</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label>PHP 安装路径</label>
+                                    <span class="setting-desc">本地PHP可执行文件路径</span>
+                                </div>
+                                <div class="path-input-group">
+                                    <input type="text" id="php-path-main" placeholder="例如：C:\php\php.exe" value="C:\php\php.exe" class="modern-input">
+                                    <button onclick="selectPhpPath()" class="btn-icon">
+                                        <i class="fas fa-folder-open"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label>服务器端口</label>
+                                    <span class="setting-desc">本地服务器监听端口</span>
+                                </div>
+                                <input type="number" id="server-port-main" value="8000" min="1000" max="65535" class="modern-input">
+                            </div>
+                            <div class="server-controls">
+                                <button onclick="startLocalServer()" class="btn-modern btn-success">
+                                    <i class="fas fa-play"></i>
+                                    <span>启动服务器</span>
+                                </button>
+                                <button onclick="stopLocalServer()" class="btn-modern btn-danger">
+                                    <i class="fas fa-stop"></i>
+                                    <span>停止服务器</span>
+                                </button>
+                            </div>
+                            <div id="server-status-main" class="status-indicator">
+                                <i class="fas fa-circle"></i>
+                                <span>服务器状态：未知</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 缓存管理模块 -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <div class="card-icon">
+                                <i class="fas fa-broom"></i>
+                            </div>
+                            <h3>缓存管理</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="cache-info-modern">
+                                <p>清除缓存可以解决以下问题：</p>
+                                <div class="problem-list">
+                                    <span class="problem-item">Service Worker 错误</span>
+                                    <span class="problem-item">页面显示异常</span>
+                                    <span class="problem-item">功能更新不生效</span>
+                                </div>
+                            </div>
+                            <div class="cache-controls">
+                                <button onclick="clearAppCache()" class="btn-modern btn-warning">
+                                    <i class="fas fa-trash"></i>
+                                    <span>清除应用缓存</span>
+                                </button>
+                                <button onclick="clearBrowserData()" class="btn-modern btn-danger">
+                                    <i class="fas fa-database"></i>
+                                    <span>清除所有数据</span>
+                                </button>
+                            </div>
+                            <div id="cache-status-main" class="status-indicator"></div>
+                        </div>
+                    </div>
+
+                    <!-- 应用信息模块 -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <div class="card-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <h3>应用信息</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="info-grid">
+                                <div class="info-card">
+                                    <div class="info-icon">
+                                        <i class="fas fa-tag"></i>
+                                    </div>
+                                    <div class="info-details">
+                                        <span class="info-label">版本</span>
+                                        <span class="info-value">v2.0</span>
+                                    </div>
+                                </div>
+                                <div class="info-card">
+                                    <div class="info-icon">
+                                        <i class="fas fa-calendar"></i>
+                                    </div>
+                                    <div class="info-details">
+                                        <span class="info-label">构建时间</span>
+                                        <span class="info-value">2025-09-20</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 快捷操作模块 -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <div class="card-icon">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <h3>快捷操作</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="quick-actions-grid">
+                                <button onclick="openDebugConsole()" class="action-btn">
+                                    <i class="fas fa-bug"></i>
+                                    <span>调试控制台</span>
+                                </button>
+                                <button onclick="exportSettings()" class="action-btn">
+                                    <i class="fas fa-download"></i>
+                                    <span>导出设置</span>
+                                </button>
+                                <button onclick="importSettings()" class="action-btn">
+                                    <i class="fas fa-upload"></i>
+                                    <span>导入设置</span>
+                                </button>
+                                <button onclick="resetToDefault()" class="action-btn">
+                                    <i class="fas fa-undo"></i>
+                                    <span>恢复默认</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <aside class="now-playing-sidebar">
+            <div class="now-playing-content">
+                <div class="album-art-container">
+                    <img id="bar-album-art" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=">
+                </div>
+                <div class="song-info-details">
+                    <h2 id="bar-song-title">--</h2>
+                    <p id="bar-song-artist">--</p>
+                </div>
+                <div class="lyrics-content-wrapper">
+                    <div class="lyrics-content" id="lyrics-content">歌词将会显示在这里</div>
+                </div>
+            </div>
+            <div class="player-controls-container">
+                <div class="player-controls">
+                    <div class="progress-container">
+                        <canvas id="audioVisualizer"></canvas>
+                        <div class="progress-area">
+                            <span class="time-display" id="currentTime">0:00</span>
+                            <div class="progress-bar" id="progressBar">
+                                <div class="progress" id="progress"></div>
+                            </div>
+                            <span class="time-display" id="totalDuration">0:00</span>
+                        </div>
+                    </div>
+                    <div class="control-buttons">
+                        <button class="control-btn" id="shuffleBtn" title="随机"><i class="fas fa-random"></i></button>
+                        <button class="control-btn" id="prevBtn" title="上一曲"><i
+                                class="fas fa-backward-step"></i></button>
+                        <button id="playPauseBtn" title="播放"><i class="fas fa-play"></i></button>
+                        <button class="control-btn" id="nextBtn" title="下一曲"><i
+                                class="fas fa-forward-step"></i></button>
+                        <button class="control-btn" id="repeatBtn" title="循环"><i class="fas fa-redo"></i></button>
+                    </div>
+                </div>
+                <div class="extra-controls">
+                    <i class="action-btn fav-btn far fa-heart" id="bar-fav-btn" title="添加到我的收藏"></i>
+                    <div class="volume-area"><i class="fas fa-volume-down"></i><input type="range" id="volumeSlider"
+                            min="0" max="1" step="0.01" value="0.8"></div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/idb@7/build/umd.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/backgroundEffects.js"></script>
+    <script src="js/visualizer.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/settings-sidebar.js"></script>
+
+    <div id="custom-modal-overlay" class="modal-overlay">
+        <div id="custom-modal" class="modal-content">
+            <h3 id="modal-title">创建新歌单</h3>
+            <p id="modal-text">请输入新歌单的名称：</p>
+            <input type="text" id="modal-input" placeholder="例如：我的最爱">
+            <div class="modal-actions">
+                <button id="modal-confirm-btn" class="modal-button primary">确定</button>
+                <button id="modal-cancel-btn" class="modal-button">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 新增：“添加到歌单”的专用弹窗 ===== -->
+    <div id="add-to-playlist-modal-overlay" class="modal-overlay">
+        <div id="custom-modal" class="modal-content">
+            <h3 id="modal-title-add">添加到歌单</h3>
+            <p id="modal-text-add">请选择要添加到的歌单：</p>
+            <!-- 歌单列表将动态插入这里 -->
+            <div id="modal-playlist-list" class="modal-playlist-list"></div>
+            <div class="modal-actions">
+                <!-- 我们只用一个取消按钮，因为点击列表项即为确认 -->
+                <button id="modal-cancel-btn-add" class="modal-button">取消</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- 设置侧栏 -->
+    <div id="settings-sidebar" class="settings-sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-cog"></i> 基本设置</h3>
+            <button class="sidebar-close" onclick="toggleSettingsSidebar()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-content">
+            <!-- 播放设置模块 -->
+            <div class="sidebar-section">
+                <h4><i class="fas fa-sliders-h"></i> 播放设置</h4>
+                <div class="setting-item">
+                    <label for="audio-quality">音质选择：</label>
+                    <select id="audio-quality">
+                        <option value="high">高音质</option>
+                        <option value="medium">标准音质</option>
+                        <option value="low">流畅音质</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="auto-play">自动播放：</label>
+                    <input type="checkbox" id="auto-play" checked>
+                </div>
+                <div class="setting-item">
+                    <label for="crossfade">淡入淡出：</label>
+                    <input type="checkbox" id="crossfade">
+                </div>
+            </div>
+
+            <!-- 界面设置模块 -->
+            <div class="sidebar-section">
+                <h4><i class="fas fa-palette"></i> 界面设置</h4>
+                <div class="setting-item">
+                    <label for="show-lyrics">显示歌词：</label>
+                    <input type="checkbox" id="show-lyrics" checked>
+                </div>
+                <div class="setting-item">
+                    <label for="show-spectrum">显示频谱：</label>
+                    <input type="checkbox" id="show-spectrum">
+                </div>
+                <div class="setting-item">
+                    <label for="compact-mode">紧凑模式：</label>
+                    <input type="checkbox" id="compact-mode">
+                </div>
+            </div>
+
+            <!-- 服务器配置模块 -->
+            <div class="sidebar-section">
+                <h4><i class="fas fa-server"></i> 服务器配置</h4>
+                <div class="config-item">
+                    <label for="php-path">PHP 安装路径：</label>
+                    <div class="path-input-group">
+                        <input type="text" id="php-path" placeholder="例如：C:\php\php.exe" value="C:\php\php.exe">
+                        <button onclick="selectPhpPath()" class="btn-select">
+                            <i class="fas fa-folder-open"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="config-item">
+                    <label for="server-port">服务器端口：</label>
+                    <input type="number" id="server-port" value="8000" min="1000" max="65535">
+                </div>
+                <div class="config-actions">
+                    <button onclick="startLocalServer()" class="btn-primary">
+                        <i class="fas fa-play"></i> 启动服务器
+                    </button>
+                    <button onclick="stopLocalServer()" class="btn-secondary">
+                        <i class="fas fa-stop"></i> 停止服务器
+                    </button>
+                </div>
+                <div id="server-status" class="server-status">
+                    <i class="fas fa-circle"></i> 服务器状态：未知
+                </div>
+            </div>
+
+            <!-- 缓存管理模块 -->
+            <div class="sidebar-section">
+                <h4><i class="fas fa-broom"></i> 缓存管理</h4>
+                <div class="cache-info">
+                    <p>清除缓存可以解决以下问题：</p>
+                    <ul>
+                        <li>Service Worker 错误</li>
+                        <li>页面显示异常</li>
+                        <li>功能更新不生效</li>
+                    </ul>
+                </div>
+                <div class="cache-actions">
+                    <button onclick="clearAppCache()" class="btn-warning">
+                        <i class="fas fa-trash"></i> 清除应用缓存
+                    </button>
+                    <button onclick="clearBrowserData()" class="btn-danger">
+                        <i class="fas fa-database"></i> 清除所有数据
+                    </button>
+                </div>
+                <div id="cache-status" class="cache-status"></div>
+            </div>
+
+            <!-- 应用信息模块 -->
+            <div class="sidebar-section">
+                <h4><i class="fas fa-info-circle"></i> 应用信息</h4>
+                <div class="app-info">
+                    <div class="info-item">
+                        <span class="info-label">版本：</span>
+                        <span class="info-value">v2.0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">构建时间：</span>
+                        <span class="info-value">2024-09-19</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">技术栈：</span>
+                        <span class="info-value">HTML5 + CSS3 + JavaScript + PWA</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">音乐源：</span>
+                        <span class="info-value">6个源 (3播放 + 3增强)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快捷操作模块 -->
+            <div class="sidebar-section">
+                <h4><i class="fas fa-bolt"></i> 快捷操作</h4>
+                <div class="quick-actions">
+                    <button onclick="openDebugConsole()" class="btn-info">
+                        <i class="fas fa-bug"></i> 调试控制台
+                    </button>
+                    <button onclick="exportSettings()" class="btn-success">
+                        <i class="fas fa-download"></i> 导出设置
+                    </button>
+                    <button onclick="importSettings()" class="btn-success">
+                        <i class="fas fa-upload"></i> 导入设置
+                    </button>
+                    <button onclick="resetToDefault()" class="btn-warning">
+                        <i class="fas fa-undo"></i> 恢复默认
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 侧栏遮罩 -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSettingsSidebar()"></div>
+
+    <!-- Toast 通知容器 -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- PWA 安装提示 -->
+    <div id="pwa-install-banner" class="pwa-install-banner" style="display: none;">
+        <div class="pwa-banner-content">
+            <div class="pwa-banner-icon">
+                <i class="fas fa-download"></i>
+            </div>
+            <div class="pwa-banner-text">
+                <h4>安装音乐播放器</h4>
+                <p>添加到主屏幕，享受更好的体验</p>
+            </div>
+            <div class="pwa-banner-actions">
+                <button id="pwa-install-btn" class="pwa-install-btn">安装</button>
+                <button id="pwa-dismiss-btn" class="pwa-dismiss-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PWA 和 Service Worker 初始化 -->
+    <script>
+        // PWA 安装和 Service Worker 注册
+        (function() {
+            let deferredPrompt;
+            let isInstalled = false;
+            
+            // 检查是否已经安装为PWA
+            function checkIfInstalled() {
+                // 检查是否在独立模式下运行
+                if (window.matchMedia('(display-mode: standalone)').matches || 
+                    window.navigator.standalone === true) {
+                    isInstalled = true;
+                    console.log('🎵 PWA已安装并在独立模式下运行');
+                    return true;
+                }
+                return false;
+            }
+            
+            // 注册 Service Worker
+            async function registerServiceWorker() {
+                if ('serviceWorker' in navigator) {
+                    try {
+                        const registration = await navigator.serviceWorker.register('/sw-simple.js', {
+                            scope: '/'
+                        });
+                        
+                        console.log('✅ Service Worker 注册成功:', registration.scope);
+                        
+                        // 监听 Service Worker 更新
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            console.log('🔄 发现 Service Worker 更新');
+                            
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // 新的 Service Worker 已安装，提示用户刷新
+                                    showUpdateNotification();
+                                }
+                            });
+                        });
+                        
+                        return registration;
+                    } catch (error) {
+                        console.error('❌ Service Worker 注册失败:', error);
+                    }
+                } else {
+                    console.log('⚠️ 浏览器不支持 Service Worker');
+                }
+            }
+            
+            // 显示更新通知
+            function showUpdateNotification() {
+                if (window.showToast) {
+                    const updateBtn = document.createElement('button');
+                    updateBtn.textContent = '立即更新';
+                    updateBtn.style.marginLeft = '10px';
+                    updateBtn.style.padding = '5px 10px';
+                    updateBtn.style.background = '#4CAF50';
+                    updateBtn.style.color = 'white';
+                    updateBtn.style.border = 'none';
+                    updateBtn.style.borderRadius = '4px';
+                    updateBtn.style.cursor = 'pointer';
+                    
+                    updateBtn.onclick = () => {
+                        window.location.reload();
+                    };
+                    
+                    window.showToast('应用有新版本可用', 'info', 10000, updateBtn);
+                }
+            }
+            
+            // 处理PWA安装
+            function handlePWAInstall() {
+                // 监听 beforeinstallprompt 事件
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    console.log('💡 PWA安装提示可用');
+                    e.preventDefault();
+                    deferredPrompt = e;
+                    
+                    // 如果还没安装，显示安装横幅
+                    if (!isInstalled && !localStorage.getItem('pwa-install-dismissed')) {
+                        showInstallBanner();
+                    }
+                });
+                
+                // 监听应用安装事件
+                window.addEventListener('appinstalled', (e) => {
+                    console.log('🎉 PWA安装成功');
+                    isInstalled = true;
+                    hideInstallBanner();
+                    
+                    if (window.showToast) {
+                        window.showToast('应用安装成功！', 'success');
+                    }
+                    
+                    deferredPrompt = null;
+                });
+            }
+            
+            // 显示安装横幅
+            function showInstallBanner() {
+                const banner = document.getElementById('pwa-install-banner');
+                const installBtn = document.getElementById('pwa-install-btn');
+                const dismissBtn = document.getElementById('pwa-dismiss-btn');
+                
+                if (banner) {
+                    banner.style.display = 'block';
+                    
+                    // 安装按钮点击事件
+                    installBtn.onclick = async () => {
+                        if (deferredPrompt) {
+                            deferredPrompt.prompt();
+                            const { outcome } = await deferredPrompt.userChoice;
+                            
+                            if (outcome === 'accepted') {
+                                console.log('👍 用户接受了PWA安装');
+                            } else {
+                                console.log('👎 用户拒绝了PWA安装');
+                            }
+                            
+                            deferredPrompt = null;
+                            hideInstallBanner();
+                        }
+                    };
+                    
+                    // 关闭按钮点击事件
+                    dismissBtn.onclick = () => {
+                        hideInstallBanner();
+                        localStorage.setItem('pwa-install-dismissed', 'true');
+                    };
+                }
+            }
+            
+            // 隐藏安装横幅
+            function hideInstallBanner() {
+                const banner = document.getElementById('pwa-install-banner');
+                if (banner) {
+                    banner.style.display = 'none';
+                }
+            }
+            
+            // PWA功能增强
+            function enhancePWAFeatures() {
+                // 添加键盘快捷键支持
+                document.addEventListener('keydown', (e) => {
+                    // 空格键：播放/暂停
+                    if (e.code === 'Space' && !e.target.matches('input, textarea')) {
+                        e.preventDefault();
+                        const playBtn = document.getElementById('playPauseBtn');
+                        if (playBtn) playBtn.click();
+                    }
+                    
+                    // 左右箭头：上一首/下一首
+                    if (e.code === 'ArrowLeft' && e.ctrlKey) {
+                        e.preventDefault();
+                        const prevBtn = document.getElementById('prevBtn');
+                        if (prevBtn) prevBtn.click();
+                    }
+                    
+                    if (e.code === 'ArrowRight' && e.ctrlKey) {
+                        e.preventDefault();
+                        const nextBtn = document.getElementById('nextBtn');
+                        if (nextBtn) nextBtn.click();
+                    }
+                });
+                
+                // 媒体会话API支持（用于系统媒体控制）
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.setActionHandler('play', () => {
+                        const playBtn = document.getElementById('playPauseBtn');
+                        if (playBtn && window.state && !window.state.isPlaying) {
+                            playBtn.click();
+                        }
+                    });
+                    
+                    navigator.mediaSession.setActionHandler('pause', () => {
+                        const playBtn = document.getElementById('playPauseBtn');
+                        if (playBtn && window.state && window.state.isPlaying) {
+                            playBtn.click();
+                        }
+                    });
+                    
+                    navigator.mediaSession.setActionHandler('previoustrack', () => {
+                        const prevBtn = document.getElementById('prevBtn');
+                        if (prevBtn) prevBtn.click();
+                    });
+                    
+                    navigator.mediaSession.setActionHandler('nexttrack', () => {
+                        const nextBtn = document.getElementById('nextBtn');
+                        if (nextBtn) nextBtn.click();
+                    });
+                    
+                    console.log('🎮 媒体会话API已启用');
+                }
+                
+                // 网络状态监听
+                function updateNetworkStatus() {
+                    const isOnline = navigator.onLine;
+                    console.log(isOnline ? '🌐 网络已连接' : '📱 离线模式');
+                    
+                    if (!isOnline && window.showToast) {
+                        window.showToast('网络连接断开，部分功能可能受限', 'warning');
+                    }
+                }
+                
+                window.addEventListener('online', updateNetworkStatus);
+                window.addEventListener('offline', updateNetworkStatus);
+                
+                // 初始网络状态检查
+                updateNetworkStatus();
+            }
+            
+            // 更新媒体会话信息
+            function updateMediaSession(songInfo) {
+                if ('mediaSession' in navigator && songInfo) {
+                    navigator.mediaSession.metadata = new MediaMetadata({
+                        title: songInfo.name || '未知歌曲',
+                        artist: songInfo.artists?.[0]?.name || '未知艺术家',
+                        album: songInfo.album || '未知专辑',
+                        artwork: [
+                            {
+                                src: songInfo.pic || '/manifest-icon-192.png',
+                                sizes: '192x192',
+                                type: 'image/png'
+                            },
+                            {
+                                src: songInfo.pic || '/manifest-icon-512.png',
+                                sizes: '512x512',
+                                type: 'image/png'
+                            }
+                        ]
+                    });
+                }
+            }
+            
+            // 暴露更新媒体会话的函数到全局
+            window.updateMediaSession = updateMediaSession;
+            
+            // 初始化PWA功能
+            async function initPWA() {
+                console.log('🚀 初始化PWA功能...');
+                
+                // 检查安装状态
+                checkIfInstalled();
+                
+                // 注册Service Worker
+                await registerServiceWorker();
+                
+                // 处理PWA安装
+                handlePWAInstall();
+                
+                // 增强PWA功能
+                enhancePWAFeatures();
+                
+                console.log('✅ PWA功能初始化完成');
+            }
+            
+            // 页面加载完成后初始化
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initPWA);
+            } else {
+                initPWA();
+            }
+        })();
+
+
+    </script>
+
+</body>
+
+</html>

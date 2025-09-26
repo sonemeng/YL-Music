@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>清除缓存 - YanLing Music Player</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+            text-align: center;
+        }
+        .container {
+            background: rgba(44, 45, 47, 0.7);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(80, 80, 80, 0.5);
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #5a6fd8;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+            color: #4CAF50;
+        }
+        .error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid #f44336;
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 清除缓存工具</h1>
+        <p>如果遇到Service Worker错误，请使用此工具清除所有缓存并重新注册。</p>
+        
+        <div id="status" class="status"></div>
+        
+        <button onclick="clearAllCaches()">清除所有缓存</button>
+        <button onclick="unregisterServiceWorkers()">注销Service Worker</button>
+        <button onclick="clearAndReload()">清除并重新加载</button>
+        <br><br>
+        <button onclick="goBack()">返回音乐播放器</button>
+    </div>
+
+    <script>
+        function showStatus(message, type = 'success') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+
+        async function clearAllCaches() {
+            try {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                showStatus(`✅ 已清除 ${cacheNames.length} 个缓存`, 'success');
+                console.log('已清除的缓存:', cacheNames);
+            } catch (error) {
+                showStatus(`❌ 清除缓存失败: ${error.message}`, 'error');
+                console.error('清除缓存失败:', error);
+            }
+        }
+
+        async function unregisterServiceWorkers() {
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(registrations.map(reg => reg.unregister()));
+                    showStatus(`✅ 已注销 ${registrations.length} 个Service Worker`, 'success');
+                    console.log('已注销的Service Worker数量:', registrations.length);
+                } else {
+                    showStatus('⚠️ 浏览器不支持Service Worker', 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ 注销Service Worker失败: ${error.message}`, 'error');
+                console.error('注销Service Worker失败:', error);
+            }
+        }
+
+        async function clearAndReload() {
+            try {
+                await clearAllCaches();
+                await unregisterServiceWorkers();
+                showStatus('✅ 清除完成，3秒后重新加载...', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 3000);
+            } catch (error) {
+                showStatus(`❌ 操作失败: ${error.message}`, 'error');
+            }
+        }
+
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        // 页面加载时显示当前状态
+        window.addEventListener('load', async () => {
+            try {
+                const cacheNames = await caches.keys();
+                const registrations = 'serviceWorker' in navigator ? 
+                    await navigator.serviceWorker.getRegistrations() : [];
+                
+                console.log('当前缓存:', cacheNames);
+                console.log('当前Service Worker:', registrations.length);
+                
+                document.querySelector('.container').innerHTML += `
+                    <div style="margin-top: 20px; font-size: 14px; opacity: 0.8;">
+                        <p>当前状态：</p>
+                        <p>缓存数量: ${cacheNames.length}</p>
+                        <p>Service Worker: ${registrations.length}</p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('获取状态失败:', error);
+            }
+        });
+    </script>
+</body>
+</html>

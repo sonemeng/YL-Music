@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA 调试页面</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .success { background: rgba(76, 175, 80, 0.1); border-color: #4CAF50; }
+        .error { background: rgba(244, 67, 54, 0.1); border-color: #f44336; }
+        .warning { background: rgba(255, 193, 7, 0.1); border-color: #FFC107; }
+        .info { background: rgba(33, 150, 243, 0.1); border-color: #2196F3; }
+        pre {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5a6fd8;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 PWA 功能调试</h1>
+    
+    <div id="results"></div>
+    
+    <h2>🧪 手动测试</h2>
+    <button onclick="testManifest()">测试 Manifest</button>
+    <button onclick="testServiceWorker()">测试 Service Worker</button>
+    <button onclick="testInstallPrompt()">测试安装提示</button>
+    <button onclick="clearCache()">清除缓存</button>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        function addResult(type, title, content) {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${title}</strong><br>${content}`;
+            results.appendChild(div);
+        }
+        
+        // 自动检测PWA功能
+        async function checkPWAFeatures() {
+            addResult('info', '🚀 开始PWA功能检测', '正在检查各项PWA功能...');
+            
+            // 1. 检查 Manifest
+            try {
+                const response = await fetch('/manifest.json');
+                if (response.ok) {
+                    const manifest = await response.json();
+                    addResult('success', '✅ Manifest 文件', `成功加载: ${manifest.name}`);
+                    console.log('Manifest:', manifest);
+                } else {
+                    addResult('error', '❌ Manifest 文件', `HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                addResult('error', '❌ Manifest 文件', `加载失败: ${error.message}`);
+            }
+            
+            // 2. 检查 Service Worker 支持
+            if ('serviceWorker' in navigator) {
+                addResult('success', '✅ Service Worker 支持', '浏览器支持 Service Worker');
+                
+                try {
+                    const registration = await navigator.serviceWorker.register('/sw.js');
+                    addResult('success', '✅ Service Worker 注册', `作用域: ${registration.scope}`);
+                    
+                    // 检查 Service Worker 状态
+                    if (registration.active) {
+                        addResult('success', '✅ Service Worker 激活', '已激活并运行');
+                    } else if (registration.installing) {
+                        addResult('warning', '⏳ Service Worker 安装中', '正在安装...');
+                    } else if (registration.waiting) {
+                        addResult('warning', '⏳ Service Worker 等待中', '等待激活...');
+                    }
+                } catch (error) {
+                    addResult('error', '❌ Service Worker 注册失败', error.message);
+                }
+            } else {
+                addResult('error', '❌ Service Worker 不支持', '浏览器不支持 Service Worker');
+            }
+            
+            // 3. 检查安装提示支持
+            if ('BeforeInstallPromptEvent' in window) {
+                addResult('success', '✅ 安装提示支持', '浏览器支持 PWA 安装提示');
+            } else {
+                addResult('warning', '⚠️ 安装提示', '浏览器可能不支持安装提示（Safari/Firefox 使用其他方式）');
+            }
+            
+            // 4. 检查媒体会话API
+            if ('mediaSession' in navigator) {
+                addResult('success', '✅ 媒体会话API', '支持系统媒体控制');
+            } else {
+                addResult('warning', '⚠️ 媒体会话API', '不支持系统媒体控制');
+            }
+            
+            // 5. 检查缓存API
+            if ('caches' in window) {
+                addResult('success', '✅ 缓存API', '支持离线缓存');
+                
+                try {
+                    const cacheNames = await caches.keys();
+                    if (cacheNames.length > 0) {
+                        addResult('info', '📦 现有缓存', `发现 ${cacheNames.length} 个缓存: ${cacheNames.join(', ')}`);
+                    } else {
+                        addResult('info', '📦 缓存状态', '暂无缓存数据');
+                    }
+                } catch (error) {
+                    addResult('error', '❌ 缓存检查失败', error.message);
+                }
+            } else {
+                addResult('error', '❌ 缓存API', '不支持缓存API');
+            }
+            
+            // 6. 检查网络状态
+            if ('onLine' in navigator) {
+                const status = navigator.onLine ? '在线' : '离线';
+                const type = navigator.onLine ? 'success' : 'warning';
+                addResult(type, '🌐 网络状态', `当前状态: ${status}`);
+            }
+            
+            // 7. 检查显示模式
+            const displayMode = window.matchMedia('(display-mode: standalone)').matches ? 'PWA独立模式' : 
+                               window.matchMedia('(display-mode: minimal-ui)').matches ? '最小UI模式' : 
+                               window.matchMedia('(display-mode: fullscreen)').matches ? '全屏模式' : '浏览器模式';
+            
+            const type = displayMode === 'PWA独立模式' ? 'success' : 'info';
+            addResult(type, '📱 显示模式', displayMode);
+            
+            // 8. 检查HTTPS
+            const isSecure = location.protocol === 'https:' || location.hostname === 'localhost';
+            if (isSecure) {
+                addResult('success', '🔒 安全连接', 'HTTPS 或 localhost');
+            } else {
+                addResult('error', '❌ 不安全连接', 'PWA 需要 HTTPS 连接');
+            }
+        }
+        
+        // 手动测试函数
+        async function testManifest() {
+            try {
+                const response = await fetch('/manifest.json');
+                const manifest = await response.json();
+                addResult('info', '📋 Manifest 内容', `<pre>${JSON.stringify(manifest, null, 2)}</pre>`);
+            } catch (error) {
+                addResult('error', '❌ Manifest 测试失败', error.message);
+            }
+        }
+        
+        async function testServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    addResult('info', '🔧 Service Worker 状态', 
+                        `注册数量: ${registrations.length}<br>` +
+                        registrations.map(reg => `作用域: ${reg.scope}, 状态: ${reg.active ? '激活' : '未激活'}`).join('<br>')
+                    );
+                } catch (error) {
+                    addResult('error', '❌ Service Worker 测试失败', error.message);
+                }
+            }
+        }
+        
+        function testInstallPrompt() {
+            addResult('info', '💡 安装提示测试', '请检查地址栏是否有安装图标，或等待安装横幅出现');
+        }
+        
+        async function clearCache() {
+            try {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                addResult('success', '🗑️ 缓存清除', `已清除 ${cacheNames.length} 个缓存`);
+                
+                // 重新注册 Service Worker
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(registrations.map(reg => reg.unregister()));
+                    addResult('info', '🔄 Service Worker', '已注销，页面刷新后将重新注册');
+                }
+            } catch (error) {
+                addResult('error', '❌ 清除失败', error.message);
+            }
+        }
+        
+        // 监听安装提示事件
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            addResult('success', '🎉 安装提示可用', '检测到安装提示事件');
+        });
+        
+        // 监听应用安装事件
+        window.addEventListener('appinstalled', (e) => {
+            addResult('success', '🎉 应用已安装', 'PWA 安装成功！');
+        });
+        
+        // 页面加载完成后自动检测
+        document.addEventListener('DOMContentLoaded', checkPWAFeatures);
+    </script>
+</body>
+</html>

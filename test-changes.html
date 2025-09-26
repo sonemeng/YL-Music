@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>🔧 YanLing Music Player 功能测试</h1>
+    
+    <div class="test-section">
+        <h2>✅ 已完成的修改</h2>
+        <div class="status success">
+            ✅ 移除个人标识 - 改为简单的设置按钮
+        </div>
+        <div class="status success">
+            ✅ 近期最爱布局优化 - 网格布局，最多显示8个
+        </div>
+        <div class="status success">
+            ✅ 侧栏标题修改 - 改为"YanLing"
+        </div>
+        <div class="status success">
+            ✅ 模块名称修改 - 改为"基本设置"
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎯 功能验证</h2>
+        <div class="status info">
+            <strong>设置按钮：</strong>右上角圆形齿轮图标
+        </div>
+        <div class="status info">
+            <strong>近期最爱：</strong>网格布局，最多显示8个项目
+        </div>
+        <div class="status info">
+            <strong>侧栏功能：</strong>点击设置按钮打开侧栏
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔗 快速链接</h2>
+        <p>
+            <a href="/" style="display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 5px;">
+                🎵 返回音乐播放器
+            </a>
+        </p>
+    </div>
+    
+    <div class="test-section">
+        <h2>📋 修改详情</h2>
+        <ul>
+            <li><strong>个人标识</strong> → <strong>设置按钮</strong>：简洁的圆形齿轮图标</li>
+            <li><strong>近期最爱</strong>：从横向滚动改为网格布局，限制显示8个</li>
+            <li><strong>侧栏标题</strong>：从"设置与工具"改为"YanLing"</li>
+            <li><strong>模块标题</strong>：从"关于开发者"改为"基本设置"</li>
+        </ul>
+    </div>
+    
+    <script>
+        console.log('🔧 测试页面已加载');
+        console.log('📍 当前URL:', window.location.href);
+        console.log('⏰ 加载时间:', new Date().toLocaleString());
+    </script>
+</body>
+</html>
