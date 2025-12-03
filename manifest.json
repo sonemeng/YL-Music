@@ -1,6 +1,6 @@
 {
-  "name": "YanLing Music Player",
-  "short_name": "YanLing音乐",
+  "name": "YL-Music",
+  "short_name": "YL-Music",
   "description": "YanLing个人定制音乐播放器 - 支持多源搜索、元数据增强、高质量封面和歌词同步。集成网易云、JOOX、酷我、腾讯音乐等多个平台。由YanLing精心打造。",
   "start_url": "/",
   "display": "standalone",

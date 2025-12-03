@@ -7,7 +7,7 @@ let db;
  * 初始化 IndexedDB 数据库。
  * 此函数会负责创建所有需要的 "表" (ObjectStores)。
  */
-async function initDB() {
+ async function initDB() {
     db = await idb.openDB('music-player-db', 1, {
         upgrade(db) {
             console.log('数据库版本更新或首次创建...');
@@ -130,8 +130,26 @@ async function getSongsInPlaylist(playlistId) {
     if (!db) await initDB();
     const index = db.transaction('playlist_songs').store.index('by_playlist');
     const songs = await index.getAll(IDBKeyRange.only(playlistId));
-    // 按添加时间倒序，新添加的在最前面
+    // 优先按自定义顺序排序；若无 order 则按添加时间倒序
+    const haveOrder = songs.some(s => typeof s.order === 'number');
+    if (haveOrder) {
+        return songs.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }
     return songs.sort((a, b) => b.id - a.id);
+}
+
+async function getRecentPlaylistEntries(limit = 6) {
+    if (!db) await initDB();
+    const all = await db.getAll('playlist_songs');
+    const sorted = all.sort((a, b) => b.id - a.id);
+    return sorted.slice(0, limit);
+}
+
+async function getSongByIdFromPlaylistSongs(songId) {
+    if (!db) await initDB();
+    const all = await db.getAll('playlist_songs');
+    const found = all.find(it => it && it.song && it.song.id === songId);
+    return found ? found.song : null;
 }
 
 /**
@@ -141,6 +159,64 @@ async function getSongsInPlaylist(playlistId) {
 async function removeSongFromPlaylist(playlistSongId) {
     if (!db) await initDB();
     return await db.delete('playlist_songs', playlistSongId);
+}
+
+async function updatePlaylistSongsCoverBySongId(songId, picUrl) {
+    if (!db) await initDB();
+    const tx = db.transaction('playlist_songs', 'readwrite');
+    const store = tx.store;
+    const all = await store.getAll();
+    for (const rec of all) {
+        if (rec && rec.song && rec.song.id === songId) {
+            rec.song.pic = picUrl;
+            await store.put(rec);
+        }
+    }
+    await tx.done;
+}
+
+async function updatePlaylistSongsCoverByNameArtist(name, artistStr, picUrl) {
+    if (!db) await initDB();
+    const nameKey = String(name || '').toLowerCase().trim();
+    const artistKey = String(artistStr || '').toLowerCase().trim();
+    const tx = db.transaction('playlist_songs', 'readwrite');
+    const store = tx.store;
+    const all = await store.getAll();
+    for (const rec of all) {
+        const s = rec && rec.song;
+        if (!s) continue;
+        const sName = String(s.name || '').toLowerCase().trim();
+        const sArtists = Array.isArray(s.artists) ? s.artists.map(a=>a.name).join(' / ') : '';
+        const sArtistKey = sArtists.toLowerCase().trim();
+        const isSvg = typeof s.pic === 'string' && /^data:image\/svg/i.test(s.pic);
+        if (sName === nameKey && (!artistKey || sArtistKey === artistKey)) {
+            if (!s.pic || isSvg) {
+                s.pic = picUrl;
+                await store.put(rec);
+            }
+        }
+    }
+    await tx.done;
+}
+
+/**
+ * 设置歌单内歌曲顺序
+ * @param {number} playlistId - 歌单ID
+ * @param {number[]} orderedPlaylistSongIds - playlist_songs 表中记录的 id 顺序
+ */
+async function setPlaylistOrder(playlistId, orderedPlaylistSongIds) {
+    if (!db) await initDB();
+    const tx = db.transaction('playlist_songs', 'readwrite');
+    const store = tx.store;
+    for (let i = 0; i < orderedPlaylistSongIds.length; i++) {
+        const psId = orderedPlaylistSongIds[i];
+        const rec = await store.get(psId);
+        if (rec && rec.playlistId === playlistId) {
+            rec.order = i;
+            await store.put(rec);
+        }
+    }
+    await tx.done;
 }
 
 // 启动时立即执行数据库初始化

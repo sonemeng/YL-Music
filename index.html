@@ -4,10 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能音乐播放器</title>
+    <title>YL-Music</title>
     
     <!-- PWA 配置 -->
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+    <link rel="shortcut icon" href="assets/icons/favicon.svg" type="image/svg+xml">
     <meta name="theme-color" content="#16213e">
     <meta name="background-color" content="#1a1a2e">
     <meta name="display" content="standalone">
@@ -16,7 +18,7 @@
     <!-- iOS Safari PWA 支持 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="音乐播放器">
+    <meta name="apple-mobile-web-app-title" content="YL-Music">
     <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9InVybCgjZ3JhZGllbnQwX2xpbmVhcl8xXzEpIi8+CjxwYXRoIGQ9Ik05NiAxNDRDMTEyLjU2OSAxNDQgMTI2IDEzMC41NjkgMTI2IDExNEMxMjYgOTcuNDMxNSAxMTIuNTY5IDg0IDk2IDg0Qzc5LjQzMTUgODQgNjYgOTcuNDMxNSA2NiAxMTRDNjYgMTMwLjU2OSA3OS40MzE1IDE0NCA5NiAxNDRaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTI2IDExNFY0OEwxNjYgNDBWMTA2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJncmFkaWVudDBfbGluZWFyXzFfMSIgeDE9IjAiIHkxPSIwIiB4Mj0iMTkyIiB5Mj0iMTkyIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxzdG9wIHN0b3AtY29sb3I9IiM2NjdlZWEiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjNzY0YmEyIi8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPC9zdmc+">
     
     <!-- Microsoft Edge/Windows PWA 支持 -->
@@ -29,7 +31,7 @@
     <meta name="author" content="Music Player Team">
     
     <!-- Open Graph -->
-    <meta property="og:title" content="智能音乐播放器">
+    <meta property="og:title" content="YL-Music">
     <meta property="og:description" content="支持多源搜索和元数据增强的智能音乐播放器">
     <meta property="og:type" content="website">
     <meta property="og:url" content="/">
@@ -80,6 +82,7 @@
                     <li><a href="#" class="nav-link" data-view="stats-view" title="听歌统计"><i class="fas fa-chart-pie"></i><span class="sidebar-text">听歌统计</span></a>
                     </li>
                     <li><a href="#" class="nav-link" data-view="playlists-view" title="我的歌单"><i class="fas fa-music"></i><span class="sidebar-text">我的歌单</span></a></li>
+                    <li><a href="#" class="nav-link" data-view="remote-view" title="远程存储"><i class="fas fa-cloud"></i><span class="sidebar-text">远程存储</span></a></li>
                     <li><a href="#" class="nav-link" data-view="settings-view" title="基本设置"><i class="fas fa-cog"></i><span class="sidebar-text">基本设置</span></a></li>
                 </ul>
             </nav>
@@ -95,9 +98,32 @@
                     <div class="theme-dot" data-theme="theme-gradient-mint" 
                         style="background: linear-gradient(135deg, #A9F1DF, #FFBBBB);"></div>
                 </div>
-                <div class="theme-switcher" id="themeToggle"><i class="fas fa-sun"></i> <span>切换模式</span></div>
+                <div class="theme-switcher" id="themeToggle"><i class="fas fa-sun"></i> <span>切换主题</span></div>
             </div>
         </aside>
+
+        <div id="fs-lyrics-overlay" class="fs-lyrics-overlay" aria-hidden="true" style="display:none;">
+            <div class="fs-lyrics-bg" id="fs-lyrics-bg"></div>
+            <div class="fs-lyrics-topbar">
+                <div class="fs-pill">YL-Music · 全屏歌词 · 按 Esc 退出</div>
+                <button id="closeFsLyricsBtn" class="icon-btn" title="退出全屏"><i class="fas fa-compress"></i></button>
+            </div>
+            <div class="fs-lyrics-center">
+                <div class="fs-cover-wrap"><img id="fs-cover" alt=""></div>
+                <div class="fs-info">
+                    <div id="fs-title" class="fs-title">--</div>
+                    <div id="fs-artist" class="fs-artist">--</div>
+                </div>
+                <div id="fs-lyrics-content" class="fs-lyrics-content"></div>
+            </div>
+            <div class="fs-bottom">
+                <div class="fs-progress">
+                    <span id="fs-time-current">0:00</span>
+                    <div class="fs-progress-bar"><div class="fs-progress-inner" id="fs-progress-inner"></div></div>
+                    <span id="fs-time-total">0:00</span>
+                </div>
+            </div>
+        </div>
 
         <main class="main-content">
             <div id="discover-view" class="view active">
@@ -118,8 +144,16 @@
                 <div id="discover-portal">
                     <div class="discover-grid" id="discover-grid"></div>
                     <div class="featured-playlist" id="featured-playlist">
-                        <h3>近期最爱</h3>
-                        <div class="featured-list" id="featured-list"></div>
+                        <h3>继续听</h3>
+                        <div class="continue-grid" id="continue-grid"></div>
+                        <div class="recent-section">
+                            <h3>最近添加</h3>
+                            <div class="recent-grid" id="recent-grid"></div>
+                        </div>
+                        <div class="frequent-section">
+                            <h3>常听艺人 <button class="link-btn" id="toggle-frequent">收起</button></h3>
+                            <div class="frequent-grid" id="frequent-grid"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -130,6 +164,25 @@
                 <h2><i class="fas fa-hdd"></i> 我的本地音乐</h2>
                 <button id="addLocalFilesBtn" class="action-button"><i class="fas fa-folder-plus"></i> 添加本地音乐</button>
                 <input type="file" id="localFileInput" multiple accept="audio/*" style="display: none;">
+                <div class="sidebar-section" id="downloads-section">
+                    <h4><i class="fas fa-download"></i> 下载管理</h4>
+                    <div class="downloads-group">
+                        <h5>下载中 <span class="count" id="count-in-progress">0</span></h5>
+                        <div id="downloads-in-progress" class="downloads-list"></div>
+                    </div>
+                    <div class="downloads-group">
+                        <h5>等待中 <span class="count" id="count-queued">0</span></h5>
+                        <div id="downloads-queued" class="downloads-list"></div>
+                    </div>
+                    <div class="downloads-group">
+                        <h5>已完成 <span class="count" id="count-completed">0</span></h5>
+                        <div id="downloads-completed" class="downloads-list"></div>
+                    </div>
+                    <div class="downloads-group">
+                        <h5>失败 <span class="count" id="count-failed">0</span></h5>
+                        <div id="downloads-failed" class="downloads-list"></div>
+                    </div>
+                </div>
                 <div id="local-list-container" class="song-list"></div>
                 <div id="pagination-local" class="pagination-controls"></div>
             </div>
@@ -200,17 +253,50 @@
             <div id="playlists-view" class="view">
                 <div class="playlists-header">
                     <h2><i class="fas fa-music"></i> 我的歌单</h2>
-                    <button id="create-playlist-btn" class="action-button"><i class="fas fa-plus"></i> 创建歌单</button>
+                    <div class="dropdown">
+                        <button id="create-playlist-btn" class="action-button dropdown-toggle"><i class="fas fa-plus"></i> 新建歌单 <i class="fas fa-chevron-down"></i></button>
+                        <div class="dropdown-menu" id="playlist-actions-menu">
+                            <button id="menu-create-playlist" class="dropdown-item"><i class="fas fa-file-medical"></i> 空白新建</button>
+                            <button id="menu-import-playlist" class="dropdown-item"><i class="fas fa-download"></i> 从平台导入</button>
+                        </div>
+                    </div>
                 </div>
                 <div id="playlists-grid" class="playlists-grid"></div>
             </div>
             
             <!-- ===== 新增：用于显示歌单内容的视图 ===== -->
             <div id="playlist-view" class="view">
-                <h2 id="playlist-view-title"><i class="fas fa-music"></i> 歌单详情</h2>
+                <div class="playlist-view-header">
+                    <div class="left">
+                        <button id="playlist-back-btn" class="icon-btn" title="返回我的歌单"><i class="fas fa-arrow-left"></i></button>
+                        <h2 id="playlist-view-title"><i class="fas fa-music"></i> 歌单详情</h2>
+                    </div>
+                    <div class="right">
+                        <button id="export-playlist-json" class="toolbar-btn"><i class="fas fa-file-export"></i><span>导出JSON</span></button>
+                        <button id="export-playlist-m3u" class="toolbar-btn"><i class="fas fa-list"></i><span>导出M3U</span></button>
+                    </div>
+                </div>
+                <div id="playlist-batch-bar" class="playlist-batch-bar" style="display:none;">
+                    <div class="batch-left">
+                        <label class="batch-select-all"><input type="checkbox" id="pl-select-all"> 全选</label>
+                        <span id="pl-selected-count" class="muted">已选 0 首</span>
+                    </div>
+                    <div class="batch-actions">
+                        <button id="playlist-remove-selected" class="toolbar-btn"><i class="fas fa-times"></i><span>移除选中</span></button>
+                        <button id="playlist-add-selected" class="toolbar-btn"><i class="fas fa-plus"></i><span>添加到歌单</span></button>
+                    </div>
+                </div>
                 <div id="playlist-view-list-container" class="song-list"></div>
                 <!-- 歌单视图也可以有自己的分页，如果需要的话 -->
                 <div id="pagination-playlist" class="pagination-controls"></div>
+            </div>
+
+            <!-- 远程存储视图 -->
+            <div id="remote-view" class="view">
+                <h2><i class="fas fa-cloud"></i> 远程存储</h2>
+                <div id="remote-status" style="margin:10px 0;color:var(--text-color-secondary);"></div>
+                <div id="remote-breadcrumb" style="margin:10px 0;"></div>
+                <div id="remote-list" class="song-list"></div>
             </div>
 
             <div id="settings-view" class="view">
@@ -273,6 +359,47 @@
                                     <input type="checkbox" id="crossfade">
                                     <span class="slider"></span>
                                 </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 远程存储（AList）配置模块 -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <div class="card-icon">
+                                <i class="fas fa-cloud"></i>
+                            </div>
+                            <h3>远程存储（AList）</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label>AList Base URL</label>
+                                    <span class="setting-desc">例如：https://alist.example.com</span>
+                                </div>
+                                <input type="text" id="alist-base-url" class="modern-input" placeholder="https://" />
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label>API Token（可选）</label>
+                                    <span class="setting-desc">某些实例仅公共访问可省略</span>
+                                </div>
+                                <input type="text" id="alist-token" class="modern-input" placeholder="Bearer Token" />
+                            </div>
+                            <div class="setting-row">
+                                <div class="setting-info">
+                                    <label>使用本地代理</label>
+                                    <span class="setting-desc">跨域受限时通过 proxy.php 转发</span>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="alist-use-proxy">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="server-controls">
+                                <button id="alist-save-btn" class="btn-modern"><i class="fas fa-save"></i><span>保存</span></button>
+                                <button id="alist-test-btn" class="btn-modern"><i class="fas fa-plug"></i><span>测试连接</span></button>
+                                <button id="alist-browse-btn" class="btn-modern"><i class="fas fa-folder-open"></i><span>打开远程存储</span></button>
                             </div>
                         </div>
                     </div>
@@ -369,7 +496,7 @@
                                     </div>
                                     <div class="info-details">
                                         <span class="info-label">版本</span>
-                                        <span class="info-value">v2.0</span>
+                                        <span class="info-value">v2.0.12</span>
                                     </div>
                                 </div>
                                 <div class="info-card">
@@ -378,7 +505,7 @@
                                     </div>
                                     <div class="info-details">
                                         <span class="info-label">构建时间</span>
-                                        <span class="info-value">2025-09-20</span>
+                                        <span class="info-value">2025-09</span>
                                     </div>
                                 </div>
                             </div>
@@ -422,6 +549,7 @@
             <div class="now-playing-content">
                 <div class="album-art-container">
                     <img id="bar-album-art" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=">
+                    <button id="openFsLyricsBtn" class="fs-open-btn icon-btn" title="全屏歌词"><i class="fas fa-expand"></i></button>
                 </div>
                 <div class="song-info-details">
                     <h2 id="bar-song-title">--</h2>
@@ -461,6 +589,9 @@
             </div>
         </aside>
     </div>
+
+    <!-- Toast 容器 -->
+    <div id="toast-container" class="toast-container"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/idb@7/build/umd.js"></script>
     <script src="js/db.js"></script>
@@ -546,6 +677,7 @@
                     <input type="checkbox" id="compact-mode">
                 </div>
             </div>
+
 
             <!-- 服务器配置模块 -->
             <div class="sidebar-section">
@@ -695,6 +827,16 @@
                         });
                         
                         console.log('✅ Service Worker 注册成功:', registration.scope);
+                        // 延迟缓存非关键资源
+                        const delayedAssets = [
+                            '/css/settings-modern.css',
+                            '/css/modern-enhancements.css',
+                            '/js/settings-sidebar.js'
+                        ];
+                        try {
+                            const readyReg = await navigator.serviceWorker.ready;
+                            readyReg.active && readyReg.active.postMessage({ type: 'CACHE_ADD', assets: delayedAssets });
+                        } catch (e) { console.log('延迟缓存发送失败', e); }
                         
                         // 监听 Service Worker 更新
                         registration.addEventListener('updatefound', () => {
@@ -831,6 +973,62 @@
                         e.preventDefault();
                         const nextBtn = document.getElementById('nextBtn');
                         if (nextBtn) nextBtn.click();
+                    }
+
+                    if (e.code === 'ArrowUp' && !e.target.matches('input, textarea')) {
+                        e.preventDefault();
+                        const audio = document.getElementById('audioPlayer');
+                        const slider = document.getElementById('volumeSlider');
+                        let v = audio ? audio.volume : (slider ? parseFloat(slider.value) : 0.8);
+                        v = Math.min(1, (isNaN(v) ? 0.8 : v) + 0.05);
+                        if (audio) audio.volume = v;
+                        if (slider) slider.value = v.toFixed(2);
+                    }
+
+                    if (e.code === 'ArrowDown' && !e.target.matches('input, textarea')) {
+                        e.preventDefault();
+                        const audio = document.getElementById('audioPlayer');
+                        const slider = document.getElementById('volumeSlider');
+                        let v = audio ? audio.volume : (slider ? parseFloat(slider.value) : 0.8);
+                        v = Math.max(0, (isNaN(v) ? 0.8 : v) - 0.05);
+                        if (audio) audio.volume = v;
+                        if (slider) slider.value = v.toFixed(2);
+                    }
+
+                    if (e.code === 'KeyD' && !e.target.matches('input, textarea')) {
+                        e.preventDefault();
+                        const favBtn = document.getElementById('bar-fav-btn');
+                        if (favBtn) favBtn.click();
+                    }
+
+                    if (e.code === 'KeyL' && !e.target.matches('input, textarea')) {
+                        e.preventDefault();
+                        if (window.toggleLyricsPanel) window.toggleLyricsPanel();
+                    }
+
+                    if (e.code === 'KeyM' && !e.target.matches('input, textarea')) {
+                        e.preventDefault();
+                        const audio = document.getElementById('audioPlayer');
+                        if (audio) audio.muted = !audio.muted;
+                    }
+
+                    if (e.code === 'KeyJ' && !e.target.matches('input, textarea')) {
+                        e.preventDefault();
+                        const audio = document.getElementById('audioPlayer');
+                        if (audio && !isNaN(audio.duration) && isFinite(audio.duration)) {
+                            const step = e.shiftKey ? 10 : 5;
+                            const target = Math.max(0, (audio.currentTime || 0) - step);
+                            audio.currentTime = target;
+                        }
+                    }
+
+                    if (e.code === 'KeyL' && e.shiftKey && !e.target.matches('input, textarea')) {
+                        e.preventDefault();
+                        const audio = document.getElementById('audioPlayer');
+                        if (audio && !isNaN(audio.duration) && isFinite(audio.duration)) {
+                            const target = Math.min((audio.currentTime || 0) + 10, audio.duration || Number.MAX_VALUE);
+                            audio.currentTime = target;
+                        }
                     }
                 });
                 

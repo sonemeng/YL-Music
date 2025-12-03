@@ -9,6 +9,85 @@ function getPlaylistByContext(context, state) {
     }
 }
 
+function renderFsLyricsFromState(dom, state) {
+    try {
+        const container = dom && dom.fsLyricsContent ? dom.fsLyricsContent : document.getElementById('fs-lyrics-content');
+        if (!container) return;
+        const data = Array.isArray(state.lyricsData) ? state.lyricsData : [];
+        if (data.length === 0) {
+            container.innerHTML = '<p>正在享受音乐...</p>';
+            return;
+        }
+        container.innerHTML = data.map((line, idx) => {
+            if (line.isWordByWord && Array.isArray(line.line)) {
+                const wordsHtml = line.line.map(w => `<span>${(w && w.text) ? w.text : ''}</span>`).join('');
+                return `<p id="fs-lyric-line-${idx}" class="word-by-word">${wordsHtml}</p>`;
+            } else {
+                const text = (line && typeof line.text === 'string') ? line.text : '';
+                return `<p id="fs-lyric-line-${idx}">${text || '...'}</p>`;
+            }
+        }).join('');
+    } catch (_) {}
+}
+
+function syncFsLyrics(dom, state) {
+    try {
+        const overlay = document.getElementById('fs-lyrics-overlay');
+        if (!overlay || overlay.style.display === 'none') return;
+        const data = Array.isArray(state.lyricsData) ? state.lyricsData : [];
+        if (data.length === 0 || dom.audioPlayer.paused) return;
+        const currentTime = dom.audioPlayer.currentTime;
+        let newIndex = -1;
+        for (let i = 0; i < data.length; i++) {
+            if (currentTime >= data[i].time) newIndex = i; else break;
+        }
+        // determine window center
+        const total = data.length;
+        const windowCenter = (newIndex !== -1) ? newIndex : 0;
+        const start = Math.max(0, windowCenter - 2);
+        const end = Math.min(total - 1, windowCenter + 2);
+
+        // toggle visibility to keep only 5 lines
+        const lines = document.querySelectorAll('#fs-lyrics-content p');
+        lines.forEach((p, idx) => {
+            if (total <= 5) {
+                p.classList.remove('hidden');
+            } else {
+                p.classList.toggle('hidden', idx < start || idx > end);
+            }
+            if (idx !== newIndex) p.classList.remove('current');
+        });
+
+        if (newIndex !== -1 && newIndex !== state.fsCurrentLyricLine) {
+            const lineEl = document.getElementById(`fs-lyric-line-${newIndex}`);
+            if (lineEl) {
+                lineEl.classList.add('current');
+                const container = document.getElementById('fs-lyrics-content');
+                const h = container.clientHeight;
+                const top = lineEl.offsetTop;
+                const lh = lineEl.offsetHeight;
+                container.scrollTop = Math.max(0, top - h / 2 + lh / 2);
+            }
+            state.fsCurrentLyricLine = newIndex;
+        }
+        if (newIndex !== -1 && data[newIndex].isWordByWord) {
+            const words = data[newIndex].line;
+            const lineEl = document.getElementById(`fs-lyric-line-${newIndex}`);
+            if (lineEl) {
+                const spans = lineEl.querySelectorAll('span');
+                let currentWordIndex = -1;
+                for (let i = 0; i < words.length; i++) {
+                    const w = words[i];
+                    if (w && w.time && currentTime >= w.time) currentWordIndex = i; else break;
+                }
+                spans.forEach((sp, idx) => {
+                    sp.classList.toggle('sung', idx <= currentWordIndex);
+                });
+            }
+        }
+    } catch (_) {}
+}
+
 function parseLrc(text) {
     if (!text) return [];
     const lines = text.split('\n');
@@ -87,6 +166,13 @@ function displayLyrics(lrcText, dom, state) {
         `;
     }
     state.currentLyricLine = -1;
+    state.fsCurrentLyricLine = -1;
+    try {
+        const fs = document.getElementById('fs-lyrics-overlay');
+        if (fs && fs.style.display !== 'none') {
+            if (typeof renderFsLyricsFromState === 'function') renderFsLyricsFromState(dom, state);
+        }
+    } catch(_) {}
 }
 
 function syncLyrics(dom, state) {
@@ -162,6 +248,21 @@ async function playSong(index, state, dom, API) {
     const song = state.currentPlaylist[index];
 
     updatePlayerUI(song, dom);
+    try {
+        const fs = document.getElementById('fs-lyrics-overlay');
+        if (fs && fs.style.display !== 'none') {
+            const fsTitle = document.getElementById('fs-title');
+            const fsArtist = document.getElementById('fs-artist');
+            const fsCover = document.getElementById('fs-cover');
+            const fsBg = document.getElementById('fs-lyrics-bg');
+            if (fsTitle) fsTitle.textContent = song.name || '--';
+            if (fsArtist) fsArtist.textContent = Array.isArray(song.artists)? song.artists.map(a=>a.name).join(' / '): '';
+            const cover = song.pic || (window.getLetterCover ? window.getLetterCover(song.name) : '');
+            if (fsCover) fsCover.src = cover;
+            if (fsBg) fsBg.style.backgroundImage = `url(${cover})`;
+            if (typeof renderFsLyricsFromState === 'function') renderFsLyricsFromState(dom, state);
+        }
+    } catch(_) {}
     updateFavouriteIcon(song.id, state.favourites.some(f => f.id === song.id), dom);
     updatePlaylistHighlight(state);
     updatePlayPauseIcon(true, dom);
@@ -202,23 +303,51 @@ async function playSong(index, state, dom, API) {
                     throw new Error('酷我音乐暂时无法播放，请尝试其他歌曲');
                 }
             } else {
-                // 其他音乐源的正常处理逻辑
-                const urlEndpoint = API.getSongUrl(song);
-                console.log('获取歌曲URL:', urlEndpoint);
-                
-                const urlResponse = await fetch(urlEndpoint);
-                console.log('URL响应状态:', urlResponse.status, urlResponse.statusText);
-                
-                if (!urlResponse.ok) throw new Error('获取歌曲URL失败');
-                
-                const urlData = await urlResponse.json();
-                console.log('URL数据:', urlData);
-                
-                const audioUrl = urlData.url?.replace(/^http:/, 'https');
-                console.log('最终音频URL:', audioUrl);
-                
-                if (!audioUrl) throw new Error('无法从API获取有效播放链接');
-                dom.audioPlayer.src = audioUrl;
+                if (song.audioUrl) {
+                    console.log('使用直链播放:', song.audioUrl);
+                    dom.audioPlayer.src = song.audioUrl;
+                } else {
+                    let requestSong = song;
+                    if (song.source === 'tencent') {
+                        try {
+                            const q = `${song.name} ${song.artists[0]?.name || ''}`.trim();
+                            const candidates = await API.getList(q);
+                            const nameL = song.name.toLowerCase();
+                            const artistL = (song.artists[0]?.name || '').toLowerCase();
+                            let best = null;
+                            let bestScore = -1;
+                            for (const c of candidates) {
+                                const cName = (c.name || '').toLowerCase();
+                                const cArtist = (Array.isArray(c.artists) ? c.artists.map(a=>a.name).join(' / ') : '').toLowerCase();
+                                let score = 0;
+                                if (cName === nameL) score += 100; else if (cName && nameL && (cName.includes(nameL) || nameL.includes(cName))) score += 50;
+                                if (artistL && cArtist) { if (cArtist.includes(artistL) || artistL.includes(cArtist)) score += 30; }
+                                if (c.pic_id) score += 5;
+                                if (score > bestScore) { bestScore = score; best = c; }
+                            }
+                            if (best) {
+                                requestSong = best;
+                                console.log('已使用稳定源替代:', best.source, best.id);
+                            } else {
+                                throw new Error('未找到稳定源替代');
+                            }
+                        } catch (e) {
+                            throw new Error('QQ源不可播放且未找到稳定源替代');
+                        }
+                    }
+                    const urlEndpoint = API.getSongUrl(requestSong);
+                    console.log('获取歌曲URL:', urlEndpoint);
+                    const urlResponse = await fetch(urlEndpoint);
+                    console.log('URL响应状态:', urlResponse.status, urlResponse.statusText);
+                    if (!urlResponse.ok) throw new Error('获取歌曲URL失败');
+                    const urlData = await urlResponse.json();
+                    console.log('URL数据:', urlData);
+                    let audioUrl = urlData.url?.replace(/^http:/, 'https');
+                    if (audioUrl && audioUrl.includes('https//')) { audioUrl = audioUrl.replace('https//', 'https://'); }
+                    console.log('最终音频URL:', audioUrl);
+                    if (!audioUrl) throw new Error('无法从API获取有效播放链接');
+                    dom.audioPlayer.src = audioUrl;
+                }
             }
 
             // 🎵 使用元数据增强功能获取最佳封面和歌词
@@ -231,10 +360,30 @@ async function playSong(index, state, dom, API) {
                     if (window.updateBackground) {
                         window.updateBackground(enhancement.cover.url, dom);
                     }
+                    try {
+                        song.pic = enhancement.cover.url;
+                        if (state.currentPlaylist && state.currentPlaylist[state.currentTrackIndex]) {
+                            state.currentPlaylist[state.currentTrackIndex].pic = enhancement.cover.url;
+                        }
+                        if (Array.isArray(state.history)) {
+                            state.history = state.history.map(ev => ev.id === song.id ? { ...ev, pic: enhancement.cover.url } : ev);
+                        }
+                        if (Array.isArray(state.favourites)) {
+                            state.favourites = state.favourites.map(ev => ev.id === song.id ? { ...ev, pic: enhancement.cover.url } : ev);
+                        }
+                        if (typeof updatePlaylistSongsCoverBySongId === 'function') {
+                            updatePlaylistSongsCoverBySongId(song.id, enhancement.cover.url).catch(()=>{});
+                        }
+                        if (typeof saveStateToLocalStorage === 'function') {
+                            saveStateToLocalStorage(state);
+                        }
+                        if (typeof renderFeaturedPlaylist === 'function') {
+                            renderFeaturedPlaylist(state, dom);
+                        }
+                    } catch (e) { console.warn('封面写回失败', e); }
                 } else {
                     console.log('🖼️ 使用默认封面');
-                    // 保持原有的随机封面逻辑
-                    const defaultCover = `https://picsum.photos/400/400?random=${encodeURIComponent(song.name)}`;
+                    const defaultCover = (window.getLetterCover ? window.getLetterCover(song.name) : '');
                     dom.barAlbumArt.src = defaultCover;
                     if (window.updateBackground) {
                         window.updateBackground(defaultCover, dom);

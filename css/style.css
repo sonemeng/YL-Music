@@ -52,6 +52,26 @@
     --glass-blur: blur(20px);
 }
 
+/* ===== 歌单详情页头部 ===== */
+.playlist-view-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin: 8px 0 14px; }
+.playlist-view-header .left { display:flex; align-items:center; gap:10px; }
+.playlist-view-header .right { display:flex; align-items:center; gap:10px; }
+
+.icon-btn {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:36px; height:36px; border-radius:10px; border:1px solid var(--border-color);
+  background: var(--component-bg); color: var(--text-color-primary); cursor:pointer;
+  transition: all .18s ease;
+}
+.icon-btn:hover { transform: translateY(-1px); border-color: var(--accent-color); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+
+.toolbar-btn {
+  display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; border:1px solid var(--border-color);
+  background: var(--component-bg); color: var(--text-color-primary); cursor:pointer; transition: all .18s ease; font-size:.95em;
+}
+.toolbar-btn i { font-size: 0.95em; }
+.toolbar-btn:hover { transform: translateY(-1px); border-color: var(--accent-color); box-shadow: 0 8px 18px rgba(0,0,0,0.12); }
+
 .light-mode {
     --accent-color: #0F52BA;
     --accent-color-hover: #0039A6;
@@ -568,6 +588,9 @@ animation: activeNavGlow 3s ease-in-out infinite;
 /* 导航项图标动画 */
 .sidebar nav a i {
     transition: transform 0.3s ease;
+    width: 22px;
+    min-width: 22px;
+    text-align: center;
 }
 
 .sidebar nav a:hover i {
@@ -1111,14 +1134,119 @@ animation: activeNavGlow 3s ease-in-out infinite;
     margin-bottom: 20px;
 }
 
-.featured-list {
+/* 最近添加与常听艺人基础布局与交互 */
+.recent-grid, .continue-grid, .frequent-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: var(--spacing-lg);
-    height: 340px;
+}
+
+.recent-card, .continue-card, .frequent-card {
+    background: var(--component-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
-    padding: var(--spacing-lg) 0;
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    cursor: pointer;
+}
+
+.recent-card:hover, .continue-card:hover, .frequent-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: rgba(var(--accent-color-rgb), .3);
+}
+
+.recent-card .cover, .continue-card .thumb, .frequent-card .frequent-cover {
+    position: relative;
+    aspect-ratio: 1/1;
+    width: 100%;
+    overflow: hidden;
+}
+
+.recent-card .cover img, .continue-card .thumb img, .frequent-card .frequent-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.recent-card .info, .continue-card .meta, .frequent-card .frequent-info {
+    padding: 10px 12px;
+}
+
+.recent-card .name, .continue-card .title, .frequent-card .frequent-name {
+    font-weight: 700;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recent-card .artist, .continue-card .artist, .frequent-card .frequent-sub {
+    color: var(--text-color-secondary);
+    font-size: .9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 播放悬浮按钮 */
+.play-overlay {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: radial-gradient(circle at 30% 30%, rgba(var(--accent-color-rgb), .9), rgba(var(--accent-color-rgb), .7));
+    color: #fff;
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    transform: translateY(6px) scale(.96);
+    transition: all .18s ease;
+}
+
+.recent-card .cover:hover .play-overlay {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.recent-card .cover .more-overlay,
+.continue-card .thumb .more-overlay,
+.frequent-card .frequent-cover .more-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--component-bg);
+    color: var(--text-color-primary);
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    transform: translateY(-4px) scale(.96);
+    transition: all .18s ease;
+}
+
+.recent-card .cover:hover .more-overlay,
+.continue-card .thumb:hover .more-overlay,
+.frequent-card .frequent-cover:hover .more-overlay {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.featured-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    max-height: 420px;
+    overflow-y: auto;
+    padding: var(--spacing-md) 0;
     scroll-behavior: smooth;
 }
 
@@ -1141,6 +1269,10 @@ animation: activeNavGlow 3s ease-in-out infinite;
         0 2px 8px rgba(0, 0, 0, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
     transform: translateZ(0);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: 8px 10px;
 }
 
 .featured-card:hover {
@@ -1156,8 +1288,10 @@ animation: activeNavGlow 3s ease-in-out infinite;
 .featured-card-art {
     position: relative;
     overflow: hidden;
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
-    aspect-ratio: 1;
+    border-radius: var(--radius-md);
+    width: 72px;
+    height: 72px;
+    flex: 0 0 72px;
 }
 
 .featured-card-art::after {
@@ -1188,8 +1322,8 @@ animation: activeNavGlow 3s ease-in-out infinite;
     transform: scale(1.1);
 }
 
-.featured-card-title, .featured-card-artist {
-    padding: 8px 12px;
+.featured-card-title, .featured-card-artist, .featured-card-album {
+    padding: 0;
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -1200,18 +1334,29 @@ animation: activeNavGlow 3s ease-in-out infinite;
     font-weight: 600;
     font-size: 14px;
     color: var(--text-color-primary);
-    padding-bottom: 4px;
 }
 
 .featured-card-artist {
     font-size: 12px;
     color: var(--text-color-secondary);
-    padding-top: 0;
-    padding-bottom: 12px;
+}
+
+.featured-card-album {
+    font-size: 12px;
+    color: var(--text-color-secondary);
+    opacity: 0.9;
+}
+
+.featured-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .featured-list::-webkit-scrollbar {
-    height: 4px;
+    width: 6px;
 }
 
 .featured-list::-webkit-scrollbar-track {
@@ -1230,8 +1375,7 @@ animation: activeNavGlow 3s ease-in-out infinite;
 }
 
 .featured-card {
-    flex: 0 0 140px;
-    width: 140px;
+    width: 100%;
     cursor: pointer;
     transition: transform 0.2s ease;
 }
@@ -2057,10 +2201,10 @@ animation: activeNavGlow 3s ease-in-out infinite;
     width: 80px;
     height: 4px;
     border-radius: 2px;
-    background: linear-gradient(to right, 
-        var(--accent-color) 0%, 
-        var(--accent-color) 80%, 
-        rgba(255, 255, 255, 0.3) 80%, 
+    background: linear-gradient(to right,
+        var(--accent-color) 0%,
+        var(--accent-color) 0%,
+        rgba(255, 255, 255, 0.3) 0%,
         rgba(255, 255, 255, 0.3) 100%);
     outline: none;
     transition: all 0.3s ease;
@@ -2843,6 +2987,8 @@ animation: activeNavGlow 3s ease-in-out infinite;
     margin-bottom: 32px;
     padding-bottom: 16px;
     border-bottom: 1px solid var(--border-color);
+    position: relative;
+    z-index: 10;
 }
 
 .playlists-header h2 {
@@ -2867,6 +3013,116 @@ animation: activeNavGlow 3s ease-in-out infinite;
     padding: 12px;
     align-items: start;
 }
+
+/* 下拉菜单（我的歌单 - 新建歌单） */
+.dropdown { position: relative; }
+.dropdown-toggle { position: relative; }
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: var(--component-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    min-width: 220px;
+    padding: 8px;
+    display: none;
+    z-index: 100; /* 高于 header，避免被遮挡 */
+}
+.dropdown.open .dropdown-menu { display: block; }
+.dropdown-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-color-primary);
+    border-radius: 10px;
+    cursor: pointer;
+}
+.dropdown-item i { width: 16px; text-align: center; color: var(--text-color-secondary); }
+.dropdown-item:hover { background: var(--hover-bg); }
+
+/* 首页 - 继续听 与 最近添加 */
+.featured-playlist { margin-top: 28px; }
+.continue-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+.continue-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--component-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.continue-card:hover { transform: translateY(-2px); border-color: var(--accent-color); box-shadow: 0 10px 24px rgba(0,0,0,0.18); }
+.continue-card .thumb { width: 56px; height: 56px; flex: 0 0 56px; overflow: hidden; border-radius: 10px; }
+.continue-card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.continue-card .meta { min-width: 0; }
+.continue-card .meta .title { font-weight: 600; color: var(--text-color-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.continue-card .meta .artist { font-size: .9em; color: var(--text-color-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.recent-section { margin-top: 20px; }
+.recent-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+.recent-card {
+    background: var(--component-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    cursor: pointer;
+}
+.recent-card:hover { transform: translateY(-2px); border-color: var(--accent-color); box-shadow: 0 10px 24px rgba(0,0,0,0.18); }
+.recent-card .cover { width: 100%; aspect-ratio: 1 / 1; background: var(--hover-bg); }
+.recent-card .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.recent-card .info { padding: 8px 10px; }
+.recent-card .info .name { font-weight: 600; color: var(--text-color-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recent-card .info .artist { font-size: .9em; color: var(--text-color-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 1200px) {
+    .continue-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+    .continue-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .recent-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+    .continue-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+    .recent-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+}
+
+/* 首页 - 常听艺人/专辑墙（3大卡，可折叠） */
+.frequent-section { margin-top: 20px; }
+.frequent-section h3 { display:flex; align-items:center; gap:8px; }
+.link-btn { background: transparent; border: none; color: var(--text-color-secondary); cursor: pointer; font-size: .9em; }
+.link-btn:hover { color: var(--text-color-primary); }
+.frequent-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.frequent-card { background: var(--component-bg); border:1px solid var(--border-color); border-radius:12px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.1); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; cursor:pointer; }
+.frequent-card:hover { transform: translateY(-2px); border-color: var(--accent-color); box-shadow: 0 10px 24px rgba(0,0,0,0.18); }
+.frequent-cover { width:100%; aspect-ratio:1/1; background: var(--hover-bg); }
+.frequent-cover img { width:100%; height:100%; object-fit:cover; display:block; }
+.frequent-info { padding: 8px 10px; }
+.frequent-name { font-weight:600; color: var(--text-color-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.frequent-sub { font-size:.9em; color: var(--text-color-secondary); }
+
+@media (max-width: 900px) { .frequent-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .frequent-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); } }
 
 /* 歌单卡片 */
 .playlist-card {
@@ -4145,7 +4401,7 @@ animation: activeNavGlow 3s ease-in-out infinite;
     }
 }
 
-/* 新增渐变薄荷主题 - 优化版 */
+/* 渐变薄荷主题 */
 .theme-gradient-mint {
     --accent-color: #FF9A9E;
     --accent-color-hover: #FF7B82;
@@ -4169,3 +4425,49 @@ animation: activeNavGlow 3s ease-in-out infinite;
 .theme-gradient-mint body {
     background: linear-gradient(135deg, #FFBBBB 0%, #FFE4E6 60%, #A9F1DF 100%);
 }
+
+.now-playing-sidebar { position: relative; }
+.np-toolbar { position: absolute; top: 8px; right: 8px; display: flex; gap: 8px; z-index: 5; }
+
+:root { --fs-lyrics-color: rgba(255,255,255,.92); --fs-lyrics-current-color: #fff; }
+
+.fs-lyrics-overlay { position: fixed; inset: 0; z-index: 10000; background: radial-gradient(1200px 800px at 50% 30%, rgba(var(--dynamic-accent-rgb), .2), transparent), linear-gradient(135deg, rgba(0,0,0,.78), rgba(0,0,0,.88)); color: var(--text-color-primary); display: none; opacity: 0; transition: opacity .28s ease; }
+.fs-lyrics-overlay::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(1000px 600px at 30% 20%, rgba(255, 153, 102, .10), transparent 60%), linear-gradient(0deg, rgba(255, 188, 143, .06), transparent 40%); mix-blend-mode: screen; }
+.fs-lyrics-overlay.show { display: block; opacity: 1; }
+.fs-lyrics-overlay.fs-hide-cursor { cursor: none !important; }
+.fs-lyrics-bg { position: absolute; inset: 0; background-position: center; background-size: cover; filter: blur(60px) saturate(1.12) brightness(1.2) sepia(.08) hue-rotate(-8deg); opacity: .5; }
+.fs-lyrics-topbar { position: fixed; top: 16px; right: 16px; display: flex; align-items: center; gap: 10px; z-index: 3; }
+.fs-lyrics-topbar .icon-btn { width: 40px; height: 40px; display: grid; place-items: center; border: none; background: transparent; color: rgba(255,255,255,.6); border-radius: 50%; transition: color .18s ease, background .18s ease, transform .18s ease; }
+.fs-lyrics-topbar .icon-btn:hover { color: #fff; background: rgba(255,255,255,.08); transform: scale(1.06); }
+.fs-pill { display: none; }
+.fs-lyrics-center { position: absolute; inset: 80px 0 120px; display: grid; place-items: center; gap: 28px; z-index: 2; }
+.fs-cover-wrap { width: clamp(260px, 24vw, 360px); height: clamp(260px, 24vw, 360px); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); }
+.fs-cover-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fs-info { text-align: center; margin-top: 10px; margin-bottom: 14px; z-index: 2; text-shadow: 0 2px 10px rgba(0,0,0,.35); }
+.fs-title { font-size: clamp(24px, 3.6vw, 36px); font-weight: 900; letter-spacing: .2px; text-shadow: 0 3px 14px rgba(0,0,0,.45); font-family: "Nunito", "Quicksand", "Inter var", "HarmonyOS Sans SC", "MiSans", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif; color: var(--fs-lyrics-current-color); }
+.fs-artist { margin-top: 6px; color: #d9ecff; font-size: clamp(14px, 2vw, 18px); cursor: pointer; text-decoration: none; transition: color .18s ease, text-shadow .18s ease; }
+.fs-artist:hover { color: #eef6ff; text-shadow: 0 0 10px rgba(120, 180, 255, .6), 0 2px 12px rgba(0,0,0,.25); }
+.fs-lyrics-content { margin-top: 12px; max-height: 44vh; width: min(1000px, 86vw); overflow-y: auto; overscroll-behavior: contain; padding: 8px 16px; scrollbar-width: none; }
+.fs-lyrics-content::-webkit-scrollbar { display: none; }
+.fs-lyrics-content p { text-align: center; line-height: 1.9; font-size: clamp(20px, 2.2vw, 24px); color: var(--fs-lyrics-color); margin: 12px 0; transition: transform .24s ease, color .24s ease, filter .24s ease; font-weight: 600; font-family: "Nunito", "Quicksand", "Inter var", "HarmonyOS Sans SC", "MiSans", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif; letter-spacing: .2px; }
+.fs-lyrics-content p.current { color: var(--fs-lyrics-current-color); transform: scale(1.1); text-shadow: 0 10px 36px rgba(0,0,0,.65); font-weight: 900; font-size: clamp(28px, 3vw, 34px); letter-spacing: .35px; filter: drop-shadow(0 8px 30px rgba(0,0,0,.55)); position: relative; }
+.fs-lyrics-content p.current::after { content: ""; position: absolute; left: 50%; bottom: -6px; width: 36%; height: 3px; transform: translateX(-50%); border-radius: 999px; background: linear-gradient(90deg, rgba(var(--dynamic-accent-rgb), .2), var(--accent-color), rgba(var(--dynamic-accent-rgb), .2)); opacity: .9; }
+.fs-lyrics-content p.hidden { display: none; }
+.fs-lyrics-content p.word-by-word span { opacity: .6; transition: opacity .15s; }
+.fs-lyrics-content p.word-by-word span.sung { opacity: 1; color: #fff; }
+.fs-bottom { position: absolute; left: 0; right: 0; bottom: 30px; display: grid; place-items: center; z-index: 2; }
+.fs-progress { display: flex; align-items: center; gap: 14px; width: min(820px, 78vw); color: rgba(255,255,255,.85); }
+.fs-progress .fs-progress-bar { flex: 1; height: 6px; border-radius: 999px; background: rgba(255,255,255,.25); overflow: hidden; }
+.fs-progress .fs-progress-inner { height: 100%; background: linear-gradient(90deg, var(--accent-color), rgba(var(--dynamic-accent-rgb), .85)); width: 0%; transition: width .2s linear; }
+.fs-progress span { font-size: 12px; opacity: .9; }
+
+/* smooth enter/exit for content */
+.fs-lyrics-overlay:not(.show) .fs-lyrics-center, .fs-lyrics-overlay:not(.show) .fs-bottom { opacity: 0; transform: translateY(8px) scale(.992); }
+.fs-lyrics-overlay.show .fs-lyrics-center, .fs-lyrics-overlay.show .fs-bottom { opacity: 1; transform: translateY(0) scale(1); transition: transform .28s cubic-bezier(.22,.61,.36,1), opacity .25s ease; }
+.fs-lyrics-overlay.fs-hide-cursor .fs-bottom { opacity: 0; transform: translateY(8px); pointer-events: none; }
+
+/* now playing album art hover fullscreen button */
+.album-art-container { position: relative; }
+.album-art-container .fs-open-btn { position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.35); color: rgba(255,255,255,.9); opacity: 0; transform: translateY(-4px) scale(.96); transition: all .18s ease; z-index: 2; pointer-events: auto; }
+.album-art-container:hover .fs-open-btn { opacity: 1; transform: translateY(0) scale(1); }
+.album-art-container .fs-open-btn:hover { background: rgba(0,0,0,.5); }

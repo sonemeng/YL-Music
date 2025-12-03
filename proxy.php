@@ -23,28 +23,13 @@ if (empty($targetUrl)) {
     exit();
 }
 
-// 验证URL是否来自允许的域名
-$allowedDomains = [
-    'li.sycdn.kuwo.cn',
-    'music-api.gdstudio.xyz',
-    'sycdn.kuwo.cn',
-    'er.sycdn.kuwo.cn'
-];
-
+// 基础安全校验：仅允许 http/https，并且必须有 host
 $parsedUrl = parse_url($targetUrl);
+$scheme = $parsedUrl['scheme'] ?? '';
 $domain = $parsedUrl['host'] ?? '';
-
-$isDomainAllowed = false;
-foreach ($allowedDomains as $allowedDomain) {
-    if (strpos($domain, $allowedDomain) !== false) {
-        $isDomainAllowed = true;
-        break;
-    }
-}
-
-if (!$isDomainAllowed) {
-    http_response_code(403);
-    echo json_encode(['error' => '不允许的域名: ' . $domain]);
+if (!in_array(strtolower($scheme), ['http','https'], true) || empty($domain)) {
+    http_response_code(400);
+    echo json_encode(['error' => '仅支持 http/https 且必须包含有效主机']);
     exit();
 }
 

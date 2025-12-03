@@ -1,3 +1,52 @@
+function getLetterCover(name) {
+    const ch = (name || 'M').trim().charAt(0).toUpperCase();
+    const colors = ['#6B7280','#EF4444','#10B981','#3B82F6','#F59E0B','#8B5CF6','#EC4899','#22C55E'];
+    const code = ch.charCodeAt(0) || 77;
+    const bg = colors[code % colors.length];
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'>
+<rect width='100%' height='100%' fill='${bg}'/>
+<text x='50%' y='54%' text-anchor='middle' dominant-baseline='middle' font-size='200' font-family='Arial, Noto Sans SC' fill='white'>${ch}</text>
+</svg>`;
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
+function renderFrequentWall(state) {
+    const grid = document.getElementById('frequent-grid');
+    if (!grid) return;
+    const now = Date.now();
+    const window14d = 14 * 24 * 60 * 60 * 1000;
+    const recent = (state.history || []).filter(s => s.playedAt && (now - new Date(s.playedAt).getTime()) <= window14d);
+    const byArtist = {};
+    for (const s of recent) {
+        const artists = Array.isArray(s.artists) ? s.artists.map(a=>a.name) : [];
+        artists.forEach(name => {
+            if (!byArtist[name]) byArtist[name] = { name, count: 0, last: 0, cover: s.pic };
+            byArtist[name].count += 1;
+            const t = new Date(s.playedAt).getTime();
+            if (t > byArtist[name].last) { byArtist[name].last = t; byArtist[name].cover = s.pic; }
+        });
+    }
+    const top = Object.values(byArtist).sort((a,b)=> b.count - a.count || b.last - a.last).slice(0,3);
+    if (top.length === 0) {
+        grid.innerHTML = `<p style="padding:12px;color:var(--text-color-secondary);">近期暂无常听数据</p>`;
+        return;
+    }
+    grid.innerHTML = top.map(a => `
+        <div class="frequent-card" data-artist="${a.name}">
+            <div class="frequent-cover">
+                <img src="${a.cover || (window.getLetterCover ? window.getLetterCover(a.name) : '')}" alt="${a.name}" onerror="this.onerror=null;this.src=window.getLetterCover(this.alt||'A')">
+                <button class="more-overlay" title="更多"><i class="fas fa-ellipsis-h"></i></button>
+            </div>
+            <div class="frequent-info">
+                <div class="frequent-name" title="${a.name}">${a.name}</div>
+                <div class="frequent-sub">近两周播放 ${a.count} 次</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+window.getLetterCover = getLetterCover;
+
 function updateBackground(imageUrl, dom) {
     const overlay = dom.backgroundOverlay;
     overlay.classList.remove('visible');
@@ -26,28 +75,119 @@ function renderDiscoverGrid(keywords, dom) {
     `).join('');
 }
 
-function renderFeaturedPlaylist(state, dom) {
-    if (state.history.length === 0) {
-        dom.featuredList.innerHTML = `<p style="color: var(--text-color-secondary);">还没有播放记录哦</p>`;
-        return;
-    }
-    const trackCounts = state.history.reduce((acc, song) => {
-        acc[song.id] = (acc[song.id] || { ...song, count: 0 });
-        acc[song.id].count++;
-        return acc;
-    }, {});
+async function renderFeaturedPlaylist(state, dom) {
+    const continueGrid = document.getElementById('continue-grid');
+    const recentGrid = document.getElementById('recent-grid');
+    if (!continueGrid || !recentGrid) return;
 
-    const topTracks = Object.values(trackCounts).sort((a, b) => b.count - a.count).slice(0, 8);
-
-    dom.featuredList.innerHTML = topTracks.map(song => `
-        <div class="featured-card" data-song-id="${song.id}">
-            <div class="featured-card-art">
-                <img src="${song.pic}" alt="${song.name}" onerror="this.src='https://picsum.photos/400/400?random=${encodeURIComponent(song.name)}'">
+    // 继续听：近48小时播放过的去重Top4；若不足则用最近播放去重Top4补齐
+    const now = Date.now();
+    const window48h = 2 * 24 * 60 * 60 * 1000;
+    const byRecent = [...(state.history || [])]
+        .filter(s => s.playedAt)
+        .sort((a, b) => new Date(b.playedAt) - new Date(a.playedAt));
+    const uniq = [];
+    const seen = new Set();
+    for (const s of byRecent) { if (!seen.has(s.id)) { seen.add(s.id); uniq.push(s); } }
+    const in48h = uniq.filter(s => (now - new Date(s.playedAt).getTime()) <= window48h).slice(0, 4);
+    const continueList = (in48h.length > 0 ? in48h : uniq.slice(0, 4));
+    if (continueList.length === 0) {
+        continueGrid.innerHTML = `<p style="padding:12px;color:var(--text-color-secondary);">还没有播放记录哦</p>`;
+    } else {
+        continueGrid.innerHTML = continueList.map(song => `
+            <div class="continue-card" data-song-id="${song.id}">
+                <div class="thumb">
+                    <img src="${song.pic || (window.getLetterCover ? window.getLetterCover(song.name) : '')}" alt="${song.name}" onerror="this.onerror=null;this.src=window.getLetterCover(this.alt||'M')">
+                    <button class="more-overlay" title="更多"><i class="fas fa-ellipsis-h"></i></button>
+                </div>
+                <div class="meta">
+                    <div class="title" title="${song.name}">${song.name}</div>
+                    <div class="artist" title="${song.artists.map(a=>a.name).join(' / ')}">${song.artists.map(a=>a.name).join(' / ')}</div>
+                </div>
             </div>
-            <p class="featured-card-title">${song.name}</p>
-            <p class="featured-card-artist">${song.artists.map(a => a.name).join(' / ')}</p>
-        </div>
-    `).join('');
+        `).join('');
+    }
+
+    // 最近添加：取 playlist_songs 最近6条
+    try {
+        const entries = await getRecentPlaylistEntries(6);
+        const songs = entries.map(e => e.song).filter(Boolean);
+        if (songs.length === 0) {
+            recentGrid.innerHTML = `<p style="padding:12px;color:var(--text-color-secondary);">最近没有新增到歌单的歌曲</p>`;
+        } else {
+            const histMap = {};
+            (state.history || []).forEach(ev => { if (ev && ev.id && ev.pic) histMap[ev.id] = ev.pic; });
+            const histKeyMap = new Map();
+            const histNameMap = new Map();
+            for (const ev of (state.history || [])) {
+                if (!ev || !ev.pic) continue;
+                if (/^data:image\/svg/i.test(ev.pic)) continue;
+                const key = `${(ev.name||'').toLowerCase().trim()}|${(Array.isArray(ev.artists)? ev.artists.map(a=>a.name).join(' / ') : '').toLowerCase().trim()}`;
+                if (!histKeyMap.has(key)) histKeyMap.set(key, ev.pic);
+                const nameKey = (ev.name||'').toLowerCase().trim();
+                if (nameKey && !histNameMap.has(nameKey)) histNameMap.set(nameKey, ev.pic);
+            }
+            const resolved = await Promise.all(songs.map(async (song) => {
+                const key = `${(song.name||'').toLowerCase().trim()}|${song.artists.map(a=>a.name).join(' / ').toLowerCase().trim()}`;
+                const nameKey = (song.name||'').toLowerCase().trim();
+                let cand = histMap[song.id] || histKeyMap.get(key) || histNameMap.get(nameKey) || song.pic;
+                if (!cand || /^data:image\/svg/i.test(cand)) {
+                    if (song.pic_id) {
+                        const api = `https://music-api.gdstudio.xyz/api.php?types=pic&source=${song.source}&id=${song.pic_id}&size=500`;
+                        try {
+                            const r = await fetch(api);
+                            if (r.ok) {
+                               const j = await r.json();
+                               if (j && j.url) cand = j.url;
+                            }
+                        } catch (_) {}
+                        if ((!cand || /^data:image\/svg/i.test(cand)) && song.pic_id) {
+                            try {
+                                const prox = `/proxy.php?url=${encodeURIComponent(api)}`;
+                                const r2 = await fetch(prox);
+                                if (r2.ok) {
+                                    const j2 = await r2.json();
+                                    if (j2 && j2.url) cand = j2.url;
+                                }
+                            } catch (_) {}
+                        }
+                    }
+                }
+                if ((!cand || /^data:image\/svg/i.test(cand)) && window.API && typeof window.API.enhanceMetadata === 'function') {
+                    try {
+                        const enh = await window.API.enhanceMetadata(song);
+                        if (enh && enh.cover && enh.cover.url) {
+                            cand = enh.cover.url;
+                            if (typeof updatePlaylistSongsCoverBySongId === 'function') {
+                                updatePlaylistSongsCoverBySongId(song.id, cand).catch(()=>{});
+                            } else if (typeof updatePlaylistSongsCoverByNameArtist === 'function') {
+                                const artistStr = Array.isArray(song.artists) ? song.artists.map(a=>a.name).join(' / ') : '';
+                                updatePlaylistSongsCoverByNameArtist(song.name, artistStr, cand).catch(()=>{});
+                            }
+                        }
+                    } catch (_) {}
+                }
+                const cover = (cand && !/^data:image\/svg/i.test(cand)) ? cand : (window.getLetterCover ? window.getLetterCover(song.name) : '');
+                return { song, cover };
+            }));
+            recentGrid.innerHTML = resolved.map(({song, cover}) => `
+                <div class="recent-card" data-song-id="${song.id}">
+                    <div class="cover">
+                        <img src="${cover}" alt="${song.name}" onerror="this.onerror=null;this.src=window.getLetterCover(this.alt||'M')">
+                        <button class="play-overlay" title="播放"><i class="fas fa-play"></i></button>
+                        <button class="more-overlay" title="更多"><i class="fas fa-ellipsis-h"></i></button>
+                    </div>
+                    <div class="info">
+                        <div class="name" title="${song.name}">${song.name}</div>
+                        <div class="artist" title="${song.artists.map(a=>a.name).join(' / ')}">${song.artists.map(a=>a.name).join(' / ')}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (e) {
+        console.error('加载最近添加失败', e);
+        recentGrid.innerHTML = `<p style="padding:12px;color:var(--danger-color);">加载最近添加失败</p>`;
+    }
 }
 
 function toggleDiscoverContent(showPortal, dom, loadingText = '正在加载...') {
@@ -108,9 +248,11 @@ function renderPlaylist(fullPlaylist, container, context, state) {
         getPaginationContainer(context).innerHTML = '';
         return;
     }
-    const totalPages = Math.ceil(totalItems / state.itemsPerPage);
-    const startIndex = (currentPage - 1) * state.itemsPerPage;
-    const endIndex = startIndex + state.itemsPerPage;
+    // 歌单详情页不分页，便于拖拽排序与批量操作
+    const noPaging = (context === 'playlist');
+    const totalPages = noPaging ? 1 : Math.ceil(totalItems / state.itemsPerPage);
+    const startIndex = noPaging ? 0 : (currentPage - 1) * state.itemsPerPage;
+    const endIndex = noPaging ? totalItems : (startIndex + state.itemsPerPage);
     const paginatedItems = fullPlaylist.slice(startIndex, endIndex);
 
     let header = `<div class="song-list-header"><span>#</span><span>歌曲</span><span>歌手</span><span>专辑</span><span>源</span><span></span><span></span><span></span></div>`;
@@ -145,9 +287,11 @@ function renderPlaylist(fullPlaylist, container, context, state) {
         // 添加音乐源标识
         const sourceBadge = song.source ? `<span class="music-source-badge ${song.source}">${song.sourceDisplayName || song.source}</span>` : '<span class="music-source-badge">本地</span>';
 
+        const playlistAttrs = context === 'playlist' ? ` data-playlist-song-id="${song.playlistSongId || ''}" draggable="true"` : '';
+        const checkboxHtml = context === 'playlist' ? `<input type="checkbox" class="pl-select" data-playlist-song-id="${song.playlistSongId || ''}">` : '';
         return `
-            <div class="song-item" data-index="${originalIndex}" data-context="${context}">
-                <span class="song-index">${originalIndex + 1}</span>
+            <div class="song-item" data-index="${originalIndex}" data-context="${context}"${playlistAttrs}>
+                <span class="song-index">${checkboxHtml}${originalIndex + 1}</span>
                 <div class="song-title"><span>${song.name}</span><span class="error-msg" id="error-${context}-${song.id}"></span></div>
                 <span>${song.artists.map(a => a.name).join(' / ')}</span>
                 <span>${song.album}</span>
@@ -170,9 +314,7 @@ function updatePlayerUI(song, dom) {
     dom.barSongTitle.textContent = song.name;
     dom.barSongArtist.textContent = song.artists.map(a => a.name).join(' / ');
     dom.barAlbumArt.src = song.pic;
-    dom.barAlbumArt.onerror = function() {
-        this.src = `https://picsum.photos/400/400?random=${encodeURIComponent(song.name)}`;
-    };
+    dom.barAlbumArt.onerror = function() { this.onerror=null; this.src = getLetterCover(song.name); };
     dom.barFavBtn.dataset.songId = song.id;
     updateBackground(song.pic, dom);
     
@@ -288,6 +430,8 @@ async function renderPlaylistView(playlistId, playlistName, state, dom) {
     document.getElementById('playlist-view-title').innerHTML = `<i class="fas fa-music"></i> ${playlistName}`;
     container.innerHTML = `<p style="padding: 15px;">正在加载歌单内容...</p>`;
     showView('playlist-view');
+    const pv = document.getElementById('playlist-view');
+    if (pv) { pv.dataset.playlistId = String(playlistId); }
 
     const songsWithPlaylistSongId = await getSongsInPlaylist(playlistId);
     state.currentPlaylistView = songsWithPlaylistSongId.map(item => ({ ...item.song, playlistSongId: item.id }));
@@ -295,6 +439,110 @@ async function renderPlaylistView(playlistId, playlistName, state, dom) {
     renderPlaylist(state.currentPlaylistView, container, 'playlist', state);
     // 为歌单容器添加特殊样式类（在渲染后添加）
     container.classList.add('playlist-container');
+    if (typeof enablePlaylistDnDAndBatch === 'function') {
+        enablePlaylistDnDAndBatch(playlistId, state);
+    } else {
+        window.__enableDnDWait = { playlistId, state };
+    }
+}
+
+// 启用歌单拖拽排序与批量操作
+function enablePlaylistDnDAndBatch(playlistId, state) {
+    const container = document.getElementById('playlist-view-list-container');
+    const batchBar = document.getElementById('playlist-batch-bar');
+    const selectAll = document.getElementById('pl-select-all');
+    const selectedCountEl = document.getElementById('pl-selected-count');
+    const removeBtn = document.getElementById('playlist-remove-selected');
+    const addBtn = document.getElementById('playlist-add-selected');
+    if (!container) return;
+
+    const selected = new Set();
+    const renumber = () => {
+        container.querySelectorAll('.song-item').forEach((item, i) => {
+            const idx = item.querySelector('.song-index');
+            if (idx) idx.lastChild && (idx.lastChild.nodeType === 3 ? idx.lastChild.nodeValue = String(i+1) : idx.appendChild(document.createTextNode(String(i+1))));
+        });
+    };
+    const refreshBatchBar = () => {
+        const count = selected.size;
+        if (selectedCountEl) selectedCountEl.textContent = `已选 ${count} 首`;
+        if (batchBar) batchBar.style.display = count > 0 ? 'flex' : 'none';
+    };
+    const persistOrder = async () => {
+        const ids = Array.from(container.querySelectorAll('.song-item[data-playlist-song-id]')).map(el => parseInt(el.dataset.playlistSongId, 10)).filter(n=>!isNaN(n));
+        if (typeof setPlaylistOrder === 'function') {
+            await setPlaylistOrder(playlistId, ids);
+        }
+        renumber();
+    };
+
+    let dragging = null;
+    container.addEventListener('dragstart', (e) => {
+        const item = e.target.closest('.song-item[data-context="playlist"]');
+        if (!item) return;
+        dragging = item;
+        e.dataTransfer.effectAllowed = 'move';
+        item.classList.add('dragging');
+    });
+    container.addEventListener('dragover', (e) => {
+        if (!dragging) return;
+        const target = e.target.closest('.song-item[data-context="playlist"]');
+        if (!target || target === dragging) return;
+        e.preventDefault();
+        const rect = target.getBoundingClientRect();
+        const after = (e.clientY - rect.top) > rect.height / 2;
+        if (after) {
+            target.after(dragging);
+        } else {
+            target.before(dragging);
+        }
+    });
+    const endDrag = async () => {
+        if (!dragging) return;
+        dragging.classList.remove('dragging');
+        dragging = null;
+        await persistOrder();
+    };
+    container.addEventListener('drop', (e) => { e.preventDefault(); endDrag(); });
+    container.addEventListener('dragend', () => endDrag());
+
+    // 批量勾选
+    container.addEventListener('change', (e) => {
+        const cb = e.target.closest('input.pl-select');
+        if (!cb) return;
+        const id = parseInt(cb.dataset.playlistSongId, 10);
+        if (cb.checked) selected.add(id); else selected.delete(id);
+        refreshBatchBar();
+    });
+    if (selectAll) selectAll.addEventListener('change', (e) => {
+        const checked = selectAll.checked;
+        container.querySelectorAll('input.pl-select').forEach(cb => {
+            cb.checked = checked;
+            const id = parseInt(cb.dataset.playlistSongId, 10);
+            if (checked) selected.add(id); else selected.delete(id);
+        });
+        refreshBatchBar();
+    });
+    if (removeBtn) removeBtn.addEventListener('click', async () => {
+        const ids = Array.from(selected);
+        for (const psId of ids) { try { await removeSongFromPlaylist(psId); } catch(_) {} }
+        // 从DOM移除
+        ids.forEach(id => container.querySelector(`.song-item[data-playlist-song-id="${id}"]`)?.remove());
+        selected.clear(); if (selectAll) selectAll.checked = false; refreshBatchBar(); renumber();
+        window.__appShowToast && window.__appShowToast('已移除选中歌曲', 'success');
+    });
+    if (addBtn) addBtn.addEventListener('click', async () => {
+        try {
+            const targetId = await showAddToPlaylistModal();
+            const ids = Array.from(selected);
+            const list = state.currentPlaylistView || [];
+            for (const psId of ids) {
+                const song = list.find(s => s.playlistSongId === psId);
+                if (song) { await addSongToPlaylist(targetId, song); }
+            }
+            window.__appShowToast && window.__appShowToast('已添加到目标歌单', 'success');
+        } catch (e) {}
+    });
 }
 
 function showCustomPrompt({ title, text, placeholder }) {
@@ -488,7 +736,6 @@ function showToast(message, type = 'success', duration = 3000) {
     
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
     const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
     toast.innerHTML = `
         <i class="fas ${icon} toast-icon"></i>
@@ -510,3 +757,6 @@ function showToast(message, type = 'success', duration = 3000) {
         }, 300);
     }, duration);
 }
+
+// 供其他脚本调用统一的 UI Toast（避免递归）
+window.__appShowToast = showToast;

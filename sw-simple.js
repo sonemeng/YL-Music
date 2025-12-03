@@ -60,6 +60,19 @@ self.addEventListener('activate', event => {
   );
 });
 
+// 支持页面发送消息以动态加入缓存（延迟缓存非核心资源）
+self.addEventListener('message', event => {
+  if (!event || !event.data) return;
+  const { type, assets } = event.data || {};
+  if (type === 'CACHE_ADD' && Array.isArray(assets) && assets.length > 0) {
+    event.waitUntil(
+      caches.open(CACHE_NAME).then(cache => cache.addAll(assets)).catch(err => {
+        console.error('延迟缓存失败:', err);
+      })
+    );
+  }
+});
+
 // 网络请求拦截 - 仅处理本地资源
 self.addEventListener('fetch', event => {
   const request = event.request;

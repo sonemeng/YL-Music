@@ -446,66 +446,50 @@ async function copyToClipboard(text) {
     }
 }
 
-// Toast通知函数
+// Toast通知函数（避免与全局 showToast 递归）
 function showToast(message, type = 'info') {
     console.log(`[${type.toUpperCase()}] ${message}`);
-    
-    // 检查是否有现有的toast系统
-    if (typeof window.showToast === 'function') {
-        window.showToast(message, type);
-        return;
-    }
-    
-    // 简单的通知实现
-    const icons = {
-        success: '✅',
-        error: '❌',
-        warning: '⚠️',
-        info: 'ℹ️'
-    };
-    
-    // 创建toast元素
+    const uiToast = (window && typeof window.__appShowToast === 'function') ? window.__appShowToast : null;
+    if (uiToast) { try { uiToast(message, type); return; } catch(_){} }
+    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
     const toast = document.createElement('div');
     toast.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: var(--card-bg, #fff);
-        color: var(--text-color, #333);
-        padding: 12px 16px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        font-size: 14px;
-        max-width: 300px;
+        position: fixed; top: 20px; right: 20px;
+        background: var(--card-bg, #fff); color: var(--text-color, #333);
+        padding: 12px 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000; font-size: 14px; max-width: 300px;
         border-left: 4px solid ${type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : type === 'warning' ? '#f39c12' : '#3498db'};
         animation: slideInRight 0.3s ease;
     `;
-    
     toast.innerHTML = `${icons[type] || 'ℹ️'} ${message}`;
-    
     document.body.appendChild(toast);
-    
-    // 3秒后自动移除
     setTimeout(() => {
         toast.style.animation = 'slideOutRight 0.3s ease';
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toast.parentNode.removeChild(toast);
-            }
-        }, 300);
+        setTimeout(() => { toast.remove(); }, 300);
     }, 3000);
 }
 
-// ===== 初始化 =====
-
-// 页面加载完成后初始化设置
 document.addEventListener('DOMContentLoaded', () => {
-    // 延迟初始化，确保其他脚本已加载
     setTimeout(initializeSettings, 500);
+    try { if (typeof updateDownloadManagerUI === 'function') updateDownloadManagerUI(); } catch(_){}
+    document.addEventListener('click', (e) => {
+        const removeBtn = e.target.closest('.btn-download-remove');
+        if (removeBtn) {
+            e.preventDefault();
+            const id = removeBtn.dataset.id;
+            if (window.removeDownloadItem) window.removeDownloadItem(id);
+            return;
+        }
+        const retryBtn = e.target.closest('.btn-download-retry');
+        if (retryBtn) {
+            e.preventDefault();
+            const id = retryBtn.dataset.id;
+            if (window.retryDownload) window.retryDownload(id);
+            return;
+        }
+    });
 });
 
-// 导出函数到全局作用域
 window.toggleSettingsSidebar = toggleSettingsSidebar;
 window.selectPhpPath = selectPhpPath;
 window.startLocalServer = startLocalServer;
@@ -516,3 +500,69 @@ window.openDebugConsole = openDebugConsole;
 window.exportSettings = exportSettings;
 window.importSettings = importSettings;
 window.resetToDefault = resetToDefault;
+
+function updateDownloadManagerUI() {
+    if (!window.state || !window.state.downloads) return;
+    const d = window.state.downloads;
+    const setCount = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
+    setCount('count-in-progress', d.inProgress.length);
+    setCount('count-queued', d.queue.length);
+    setCount('count-completed', d.completed.length);
+    setCount('count-failed', d.failed.length);
+
+    renderDownloadList('downloads-in-progress', d.inProgress);
+    renderDownloadList('downloads-queued', d.queue);
+    renderDownloadList('downloads-completed', d.completed);
+    renderDownloadList('downloads-failed', d.failed);
+}
+
+function renderDownloadList(containerId, items) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (!items || items.length === 0) { el.innerHTML = '<div class="empty-state">暂无内容</div>'; return; }
+    el.innerHTML = items.map(item => downloadItemHTML(item)).join('');
+}
+
+function downloadItemHTML(item) {
+    const statusText = getStatusText(item);
+    const showProgress = item.status === 'downloading';
+    const sizeText = (item.status === 'completed' && item.fileSize) ? ` - ${humanFileSize(item.fileSize)}` : '';
+    return `
+    <div class="download-item" data-download-id="${item.id}">
+    <div class="download-info">
+    <div class="download-title" title="${escapeHtml(item.name || '')}">${escapeHtml(item.name || '')}</div>
+    <div class="download-artist" title="${escapeHtml(item.artist || '')}">${escapeHtml(item.artist || '')}</div>
+    ${showProgress ? `
+    <div class="download-progress"><div class="download-progress-bar" style="width:${item.progress || 0}%"></div></div>
+    <div class="download-status">下载中 ${item.progress || 0}%</div>
+    ` : `<div class="download-status">${statusText}${sizeText}</div>`}
+    </div>
+    <div class="download-actions">
+    ${item.status === 'failed' ? `<button class="btn-download-action btn-download-retry" data-id="${item.id}">重试</button>` : ''}
+    <button class="btn-download-action danger btn-download-remove" data-id="${item.id}">移除</button>
+    </div>
+    </div>`;
+}
+
+function getStatusText(item) {
+    switch(item.status) {
+    case 'queued': return '等待下载';
+    case 'downloading': return `下载中 ${item.progress || 0}%`;
+    case 'completed': return '已完成';
+    case 'failed': return `下载失败${item.error ? '：' + item.error : ''}`;
+    default: return '';
+    }
+}
+
+function humanFileSize(bytes) {
+    if (!bytes || bytes <= 0) return '';
+    const k = 1024; const sizes = ['B','KB','MB','GB','TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+}
+
+function escapeHtml(str) {
+    return String(str).replace(/[&<>"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));
+}
+
+window.updateDownloadManagerUI = updateDownloadManagerUI;
